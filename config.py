@@ -28,7 +28,9 @@ ACTION_SPACE = [
     "turn_right",
     "continue",
     "stop",
-    "request_service"
+    "request_service",
+    "reschedule_service",
+    "cancel_service",
 ]
 
 # ------------------------------

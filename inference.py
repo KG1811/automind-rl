@@ -93,7 +93,8 @@ def build_prompt(observation: dict, task_name: str) -> str:
     else:
         instruction = (
             "Control the vehicle safely over the episode. Valid actions: brake, accelerate, "
-            "turn_left, turn_right, continue, stop, request_service."
+            "turn_left, turn_right, continue, stop, request_service, "
+            "reschedule_service, cancel_service."
         )
 
     return f"""

@@ -13,7 +13,7 @@ tags:
   - fleet-maintenance
   - roadside-assistance
 
-entrypoint: main:app
+entrypoint: app:app
 
 endpoints:
   reset: /reset
@@ -34,6 +34,8 @@ action_space:
         - continue
         - stop
         - request_service
+        - reschedule_service
+        - cancel_service
     value:
       type: number
       minimum: 0.0

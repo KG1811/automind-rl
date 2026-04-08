@@ -4,7 +4,7 @@ from typing import Iterable
 
 from fastapi.testclient import TestClient
 
-from main import app
+from app import app
 from models import Action
 
 
