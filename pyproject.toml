@@ -1,0 +1,21 @@
+[project]
+name = "automind-openenv"
+version = "1.0.0"
+description = "Automotive diagnosis and autonomous-control benchmark environment for OpenEnv."
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+  "fastapi>=0.104,<1.0",
+  "openai>=1.0,<2.0",
+  "openenv-core==0.2.1",
+  "pydantic>=2.7,<3.0",
+  "requests>=2.25,<3.0",
+  "uvicorn>=0.24,<1.0",
+]
+
+[project.scripts]
+server = "server.app:main"
+
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
