@@ -1,6 +1,12 @@
-﻿---
-title: Automind RL
-emoji: "🚑"
+﻿## Companion Android App
+
+AutoMind also includes an Android companion app for live vehicle monitoring, predictive alerts, and service workflows.
+
+1. Frontend source code: [AutoMind Android App](https://github.com/lakshitgulia/automind_app_frontend.git)
+2. App build / deployed download link: [Download the Android App](https://drive.google.com/file/d/1tdwMznw1ffQzn4oP3eyfBqTWWov77ek8/view?usp=share_link)
+
+
+Title: Automind RL
 colorFrom: blue
 colorTo: purple
 sdk: docker
