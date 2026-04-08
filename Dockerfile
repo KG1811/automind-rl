@@ -31,4 +31,4 @@ COPY . .
 EXPOSE 7860
 
 # Start server
-CMD uvicorn main:app --host 0.0.0.0 --port ${PORT:-7860}
+CMD uvicorn app:app --host 0.0.0.0 --port ${PORT:-7860}
