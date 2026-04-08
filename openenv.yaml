@@ -1,0 +1,91 @@
+name: automind-openenv
+version: "1.0.0"
+
+description: >
+  AutoMind OpenEnv is a fleet maintenance and roadside decision benchmark.
+  It simulates telemetry-driven diagnosis, safe maneuver selection,
+  service escalation, operator override, reward shaping, deterministic
+  graders, and a live HTTP interface for evaluating real-world agent behavior.
+
+tags:
+  - openenv
+  - automotive
+  - fleet-maintenance
+  - roadside-assistance
+
+entrypoint: main:app
+
+endpoints:
+  reset: /reset
+  step: /step
+  state: /state
+
+action_space:
+  type: object
+  properties:
+    action_type:
+      type: string
+      enum:
+        - diagnose
+        - brake
+        - accelerate
+        - turn_left
+        - turn_right
+        - continue
+        - stop
+        - request_service
+    value:
+      type: number
+      minimum: 0.0
+      maximum: 1.0
+    reason:
+      type: string
+
+observation_space:
+  type: object
+  properties:
+    speed: { type: number }
+    rpm: { type: number }
+    throttle: { type: number }
+    gear: { type: integer }
+    engine_load: { type: number }
+    transmission_load: { type: number }
+    fuel_rate: { type: number }
+    acceleration: { type: number }
+    engine_temp: { type: number }
+    distance_to_obstacle: { type: number }
+    road_condition:
+      type: string
+      enum: [dry, wet, rain]
+    drive_mode:
+      type: string
+      enum: [idle, city, cruise, sport]
+    oil_level: { type: number }
+    battery_health: { type: number }
+    latitude: { type: number }
+    longitude: { type: number }
+    heading: { type: number }
+    failures: { type: object }
+    history: { type: array }
+
+tasks:
+  - name: fault_diagnosis
+    description: Diagnose the active roadside maintenance issue from telemetry
+    difficulty: easy
+    grader: Deterministic label match with partial credit for plausible non-primary faults
+
+  - name: driving_decision
+    description: Select the safest immediate roadside maneuver from live telemetry
+    difficulty: medium
+    grader: Deterministic safety policy with partial credit for near-safe actions
+
+  - name: autonomous_control
+    description: Coordinate safe recovery, service escalation, and degradation management
+    difficulty: hard
+    grader: Trajectory score combining metrics, service actions, and reward shaping
+
+environment:
+  max_steps: 20
+  deterministic: true
+
+author: CosmoTech Team
