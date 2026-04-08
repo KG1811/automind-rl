@@ -1,5 +1,5 @@
-# Use stable Python (important for dependency compatibility)
-FROM python:3.10-slim
+# Use Python 3.11 so dependency wheels resolve cleanly on HF/Render
+FROM python:3.11-slim
 
 # Environment settings
 ENV PYTHONDONTWRITEBYTECODE=1
