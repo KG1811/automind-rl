@@ -37,6 +37,8 @@ TASK_CONFIG = {
             "continue",
             "stop",
             "request_service",
+            "reschedule_service",
+            "cancel_service",
         ],
         "goal": "Full control with safety + diagnosis + efficiency",
     },
