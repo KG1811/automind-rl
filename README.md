@@ -1,11 +1,5 @@
-﻿## Companion Android App
-
-AutoMind also includes an Android companion app for live vehicle monitoring, predictive alerts, and service workflows.
-
-1. Frontend source code: [AutoMind Android App](https://github.com/lakshitgulia/automind_app_frontend.git)
-2. App build / deployed download link: [Download the Android App](https://drive.google.com/file/d/1tdwMznw1ffQzn4oP3eyfBqTWWov77ek8/view?usp=share_link)
-
-
+﻿
+---
 Title: Automind RL
 emoji: "🚑"
 colorFrom: blue
@@ -20,6 +14,14 @@ pinned: false
 AutoMind OpenEnv is a real-world OpenEnv benchmark for fleet maintenance triage and roadside decision support. Agents must diagnose vehicle issues from telemetry, choose safe immediate maneuvers, and coordinate recovery actions such as service dispatch and rescheduling.
 
 This environment is built around decisions that connected mobility systems and fleet operators actually make in production: interpreting live telemetry, reacting to degraded health, and escalating service when safety and maintenance conditions justify it.
+
+## Companion Android App
+
+AutoMind also includes an Android companion app for live vehicle monitoring, predictive alerts, and service workflows.
+
+1. Frontend source code: [AutoMind Android App](https://github.com/lakshitgulia/automind_app_frontend.git)
+2. App build / deployed download link: [Download the Android App](https://drive.google.com/file/d/1tdwMznw1ffQzn4oP3eyfBqTWWov77ek8/view?usp=share_link)
+
 
 ## Why This Benchmark Matters
 
