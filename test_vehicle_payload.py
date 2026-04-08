@@ -1,4 +1,4 @@
-from environment import AutoMindEnv
+﻿from environment import AutoMindEnv
 
 
 def test_hard_difficulty_exposes_vehicle_side_signals_and_events():

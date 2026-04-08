@@ -15,7 +15,6 @@ MODEL_NAME = os.getenv("MODEL_NAME", "gpt-4o-mini")
 HF_TOKEN = os.getenv("HF_TOKEN")
 LOCAL_IMAGE_NAME = os.getenv("LOCAL_IMAGE_NAME")
 ENV_BASE_URL = os.getenv("ENV_BASE_URL", "http://127.0.0.1:8000")
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 MAX_STEPS = 20
 TEMPERATURE = 0.1
 TASK_RUNS = [
@@ -31,13 +30,12 @@ TASK_RUNS = [
 ]
 
 
-def log_start(task: str, env: str, model: str, difficulty: str) -> None:
+def log_start(task: str, env: str, model: str) -> None:
     print("[START]", flush=True)
     print(
         json.dumps(
             {
                 "task": task,
-                "difficulty": difficulty,
                 "env": env,
                 "model": model,
             }
@@ -62,13 +60,12 @@ def log_step(step: int, action: dict, reward: float, done: bool, error: Optional
     )
 
 
-def log_end(success: bool, steps: int, score: float, rewards: list[float], task: str, difficulty: str) -> None:
+def log_end(success: bool, steps: int, score: float, rewards: list[float], task: str) -> None:
     print("[END]", flush=True)
     print(
         json.dumps(
             {
                 "task": task,
-                "difficulty": difficulty,
                 "success": success,
                 "steps": steps,
                 "score": score,
@@ -114,7 +111,7 @@ Observation:
 
 
 def get_model_action(client: OpenAI, observation: dict, task_name: str) -> Optional[Action]:
-    if not OPENAI_API_KEY:
+    if not HF_TOKEN:
         return None
 
     try:
@@ -189,7 +186,7 @@ def run_episode(client: EnvClient, llm_client: OpenAI, task_name: str, difficult
     score = 0.0
     success = False
 
-    log_start(task=task_name, env=client.mode(), model=MODEL_NAME, difficulty=difficulty)
+    log_start(task=task_name, env=client.mode(), model=MODEL_NAME)
 
     try:
         obs = client.reset(task_name=task_name, difficulty=difficulty)
@@ -252,12 +249,11 @@ def run_episode(client: EnvClient, llm_client: OpenAI, task_name: str, difficult
             score=score,
             rewards=rewards,
             task=task_name,
-            difficulty=difficulty,
         )
 
 
 if __name__ == "__main__":
-    api_key = OPENAI_API_KEY or "missing-openai-api-key"
+    api_key = HF_TOKEN or "missing-hf-token"
     llm_client = OpenAI(base_url=API_BASE_URL, api_key=api_key)
     client = EnvClient()
     try:
