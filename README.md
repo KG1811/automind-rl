@@ -7,6 +7,7 @@ AutoMind also includes an Android companion app for live vehicle monitoring, pre
 
 
 Title: Automind RL
+emoji: "🚑"
 colorFrom: blue
 colorTo: purple
 sdk: docker
