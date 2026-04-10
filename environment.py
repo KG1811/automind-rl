@@ -96,6 +96,9 @@ class AutoMindEnv:
             "task_score": strict_task_score(0.0),
         }
 
+    def _strict_metric_score(self, value: float) -> float:
+        return strict_task_score(value)
+
     def _build_vehicle_profile(self) -> dict:
         catalog = [
             {"name": "Creta SX 2021", "maker": "Hyundai"},
@@ -1155,7 +1158,7 @@ class AutoMindEnv:
         info_updates: dict,
         metrics: Metrics,
     ) -> StepResult:
-        self.last_reward = max(0.0, min(1.0, round(reward, 3)))
+        self.last_reward = strict_task_score(reward)
         self.last_done = True
         self.last_metrics = metrics
         self.last_info = {
@@ -1184,7 +1187,7 @@ class AutoMindEnv:
     ) -> float:
         if is_collision:
             self.last_reward_breakdown = RewardBreakdown(
-                total=-1.0,
+                total=strict_task_score(0.0),
                 safety_component=0.0,
                 efficiency_component=0.0,
                 diagnosis_component=0.0,
@@ -1193,7 +1196,7 @@ class AutoMindEnv:
                 sequence_component=min(1.0, self.episode_state.step_count / max(1.0, self.max_steps)),
                 penalty_component=-1.0,
             )
-            return -1.0
+            return strict_task_score(0.0)
 
         alerts = self._build_active_alerts(observation, collision_risk)
         health_snapshot = self._compute_health_snapshot(observation, collision_risk)
@@ -1235,7 +1238,7 @@ class AutoMindEnv:
             + 0.12 * sequence
             + penalty
         )
-        total = max(-1.0, min(1.0, round(total, 3)))
+        total = strict_task_score(total)
 
         self.last_reward_breakdown = RewardBreakdown(
             total=total,
@@ -1267,10 +1270,10 @@ class AutoMindEnv:
         sequence = min(1.0, self.episode_state.step_count / 10.0)
 
         return Metrics(
-            safety_score=round(safety, 3),
-            efficiency_score=round(efficiency, 3),
-            diagnosis_score=round(diagnosis, 3),
-            sequence_score=round(sequence, 3),
+            safety_score=self._strict_metric_score(safety),
+            efficiency_score=self._strict_metric_score(efficiency),
+            diagnosis_score=self._strict_metric_score(diagnosis),
+            sequence_score=self._strict_metric_score(sequence),
         )
 
     def _check_done(self) -> bool:
@@ -1319,10 +1322,10 @@ class AutoMindEnv:
                     "outcome": "success_diagnosis" if score >= 0.95 else "failure_diagnosis",
                 },
                 metrics=Metrics(
-                    safety_score=1.0,
-                    efficiency_score=0.0,
-                    diagnosis_score=score,
-                    sequence_score=1.0,
+                    safety_score=self._strict_metric_score(1.0),
+                    efficiency_score=self._strict_metric_score(0.0),
+                    diagnosis_score=self._strict_metric_score(score),
+                    sequence_score=self._strict_metric_score(1.0),
                 ),
             )
 
@@ -1379,7 +1382,7 @@ class AutoMindEnv:
             action_type=applied_action.action_type,
             action_reason=applied_action.reason,
         )
-        self.last_info["task_score"] = strict_task_score((self.last_reward + 1.0) / 2.0)
+        self.last_info["task_score"] = strict_task_score(self.last_reward)
         self.last_background_sync_at = time.monotonic()
 
         if self.current_task == "driving_decision":
@@ -1409,10 +1412,10 @@ class AutoMindEnv:
                     "decision_score": round(decision_score, 3),
                 },
                 metrics=Metrics(
-                    safety_score=self.last_metrics.safety_score,
-                    efficiency_score=self.last_metrics.efficiency_score,
-                    diagnosis_score=decision_score,
-                    sequence_score=1.0,
+                    safety_score=self._strict_metric_score(self.last_metrics.safety_score),
+                    efficiency_score=self._strict_metric_score(self.last_metrics.efficiency_score),
+                    diagnosis_score=self._strict_metric_score(decision_score),
+                    sequence_score=self._strict_metric_score(1.0),
                 ),
             )
 
