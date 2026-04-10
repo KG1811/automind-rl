@@ -57,7 +57,7 @@ C:\Users\Khushi\AppData\Roaming\Python\Python313\Scripts\openenv.exe validate
 Action fields:
 
 - `action_type: str`
-- `value: float` in `[0.0, 1.0]`
+- `value: float` strictly within `(0.0, 1.0]`
 - `reason: str`
 
 Supported actions:
@@ -101,9 +101,9 @@ Expected behavior:
 
 Deterministic grader:
 
-- `1.0` for an exact diagnosis
-- `0.5` for a plausible non-primary fault when a real fault exists
-- `0.0` otherwise
+- `0.99` for an exact diagnosis
+- `0.50` for a plausible non-primary fault when a real fault exists
+- `0.01` otherwise
 
 ### 2. `driving_decision` (`medium`)
 
@@ -117,9 +117,10 @@ Expected behavior:
 
 Deterministic grader:
 
-- `1.0` for the safest action
-- partial credit for near-safe alternatives
-- `0.0` for clearly unsafe actions
+- `0.99` for the safest action
+- intermediate partial credit for near-safe alternatives
+- `0.01` for clearly unsafe actions
+
 
 ### 3. `autonomous_control` (`hard`)
 
@@ -136,7 +137,8 @@ Expected behavior:
 Deterministic grader:
 
 - combines safety, diagnosis, efficiency, service handling, outcome quality, and sequence quality
-- returns a final score in `[0.0, 1.0]`
+- returns a final score strictly within (0, 1)
+
 
 ## Reward Function
 
@@ -176,9 +178,10 @@ When no token is available, the script safely falls back to the deterministic ru
 
 Current baseline scores:
 
-- `fault_diagnosis`: `1.000 / 1.000 / 1.000`
-- `driving_decision`: `1.000 / 0.400 / 0.700`
+- `fault_diagnosis`: `0.990 / 0.990 / 0.990`
+- `driving_decision`: `0.990 / 0.400 / 0.700`
 - `autonomous_control`: `0.176 / 0.108 / 0.154`
+
 
 ## Local Setup
 
