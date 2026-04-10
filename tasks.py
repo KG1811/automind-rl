@@ -7,6 +7,7 @@ from __future__ import annotations
 from typing import Optional
 from models import Observation, Action, Metrics
 
+<<<<<<< HEAD
 MIN_TASK_SCORE = 0.01
 MAX_TASK_SCORE = 0.99
 
@@ -14,6 +15,8 @@ MAX_TASK_SCORE = 0.99
 def strict_task_score(score: float) -> float:
     return round(max(MIN_TASK_SCORE, min(MAX_TASK_SCORE, score)), 3)
 
+=======
+>>>>>>> 969704d23625cf3cdc7217339277857306c53593
 
 # =====================================
 # TASK CONFIG
@@ -79,18 +82,31 @@ def grade_fault_diagnosis(action: Optional[Action], observation: Observation) ->
     """
 
     if action is None or action.action_type != "diagnose":
+<<<<<<< HEAD
         return MIN_TASK_SCORE
+=======
+        return 0.0
+>>>>>>> 969704d23625cf3cdc7217339277857306c53593
 
     predicted_fault = action.reason.strip().lower()
     true_fault = detect_true_fault(observation)
 
     if predicted_fault == true_fault:
+<<<<<<< HEAD
         return MAX_TASK_SCORE
 
     if true_fault != "no_fault" and predicted_fault != "no_fault":
         return strict_task_score(0.5)
 
     return MIN_TASK_SCORE
+=======
+        return 1.0
+
+    if true_fault != "no_fault" and predicted_fault != "no_fault":
+        return 0.5
+
+    return 0.0
+>>>>>>> 969704d23625cf3cdc7217339277857306c53593
 
 
 # =====================================
@@ -139,6 +155,7 @@ def grade_driving_decision(action: Action, observation: Observation) -> float:
     correct_action = get_safe_action(observation)
 
     if action_type == correct_action:
+<<<<<<< HEAD
         return MAX_TASK_SCORE
 
     if correct_action == "brake" and action_type == "stop":
@@ -160,6 +177,29 @@ def grade_driving_decision(action: Action, observation: Observation) -> float:
         return MIN_TASK_SCORE
 
     return MIN_TASK_SCORE
+=======
+        return 1.0
+
+    if correct_action == "brake" and action_type == "stop":
+        return 0.7
+
+    if correct_action == "stop" and action_type == "brake":
+        return 0.7
+
+    if correct_action == "continue" and action_type == "accelerate":
+        return 0.6
+
+    if correct_action == "accelerate" and action_type == "continue":
+        return 0.6
+
+    if correct_action == "continue" and action_type == "brake":
+        return 0.4
+
+    if observation.distance_to_obstacle < 20 and action_type == "continue":
+        return 0.0
+
+    return 0.0
+>>>>>>> 969704d23625cf3cdc7217339277857306c53593
 
 
 # =====================================
@@ -234,6 +274,7 @@ def evaluate_task(
 
     if task_name == "driving_decision":
         if action is None:
+<<<<<<< HEAD
             return MIN_TASK_SCORE
         score = grade_driving_decision(action, observation)
         if info and info.get("outcome") == "failure_unsafe_decision":
@@ -243,6 +284,17 @@ def evaluate_task(
     if task_name == "autonomous_control":
         if metrics is None:
             return MIN_TASK_SCORE
+=======
+            return 0.0
+        score = grade_driving_decision(action, observation)
+        if info and info.get("outcome") == "failure_unsafe_decision":
+            score = min(score, 0.5)
+        return score
+
+    if task_name == "autonomous_control":
+        if metrics is None:
+            return 0.0
+>>>>>>> 969704d23625cf3cdc7217339277857306c53593
         return grade_autonomous_control(metrics, info=info, action=action)
 
     raise ValueError(f"Unknown task: {task_name}")

@@ -8,7 +8,11 @@ from openai import OpenAI
 from agent import agent_step
 from environment import AutoMindEnv
 from models import Action, Metrics, Observation
+<<<<<<< HEAD
 from tasks import MAX_TASK_SCORE, MIN_TASK_SCORE, evaluate_task
+=======
+from tasks import evaluate_task
+>>>>>>> 969704d23625cf3cdc7217339277857306c53593
 
 API_BASE_URL = os.getenv("API_BASE_URL", "https://api.openai.com/v1")
 MODEL_NAME = os.getenv("MODEL_NAME", "gpt-4o-mini")
@@ -30,10 +34,13 @@ TASK_RUNS = [
 ]
 
 
+<<<<<<< HEAD
 def strict_score(score: float) -> float:
     return round(max(MIN_TASK_SCORE, min(MAX_TASK_SCORE, score)), 3)
 
 
+=======
+>>>>>>> 969704d23625cf3cdc7217339277857306c53593
 def log_start(task: str, env: str, model: str) -> None:
     print("[START]", flush=True)
     print(
