@@ -223,3 +223,5 @@ Primary endpoints:
 ## Summary
 
 AutoMind OpenEnv is a practical automotive benchmark for diagnosis, safe control, and roadside service coordination. It is deployed, validated, containerized, and designed to evaluate whether an agent can make realistic operational decisions rather than solve a toy task.
+
+## Note: This repository is a working clone of my original project, created for further development and improvements. All code is originally developed by me.
