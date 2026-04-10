@@ -18,7 +18,7 @@ from models import (
 )
 from simulator import AutoMindSimulator
 from service_engine import find_nearest_service, build_service_schedule
-from tasks import grade_driving_decision, grade_fault_diagnosis
+from tasks import grade_driving_decision, grade_fault_diagnosis, strict_task_score
 from vehicle_payload import build_vehicle_events, build_vehicle_signals
 from predictive_model import PredictiveMaintenanceModel
 
@@ -93,7 +93,7 @@ class AutoMindEnv:
             "service_booking": None,
             "reward_breakdown": self.last_reward_breakdown.model_dump(),
             "scenario": {},
-            "task_score": 0.0,
+            "task_score": strict_task_score(0.0),
         }
 
     def _build_vehicle_profile(self) -> dict:
@@ -925,7 +925,7 @@ class AutoMindEnv:
             "service_booking": None,
             "reward_breakdown": self.last_reward_breakdown.model_dump(),
             "scenario": self.current_scenario,
-            "task_score": 0.0,
+            "task_score": strict_task_score(0.0),
         }
 
         self.last_metrics = self._compute_metrics(
@@ -1146,7 +1146,7 @@ class AutoMindEnv:
             "vehicle_name": self.vehicle_profile["name"],
             "dashboard": dashboard,
             "ml_predictions": health_snapshot["ml_predictions"],
-            "task_score": self.last_info.get("task_score", 0.0),
+            "task_score": self.last_info.get("task_score", strict_task_score(0.0)),
         }
 
     def _finish_task_episode(
@@ -1164,7 +1164,7 @@ class AutoMindEnv:
             "override_active": self.override_active,
             "override_count": self.override_count,
             "step_count": self.episode_state.step_count,
-            "task_score": round(reward, 3),
+            "task_score": strict_task_score(reward),
         }
 
         return StepResult(
@@ -1316,7 +1316,7 @@ class AutoMindEnv:
             return self._finish_task_episode(
                 reward=score,
                 info_updates={
-                    "outcome": "success_diagnosis" if score >= 1.0 else "failure_diagnosis",
+                    "outcome": "success_diagnosis" if score >= 0.95 else "failure_diagnosis",
                 },
                 metrics=Metrics(
                     safety_score=1.0,
@@ -1379,7 +1379,7 @@ class AutoMindEnv:
             action_type=applied_action.action_type,
             action_reason=applied_action.reason,
         )
-        self.last_info["task_score"] = round(self.last_reward, 3)
+        self.last_info["task_score"] = strict_task_score((self.last_reward + 1.0) / 2.0)
         self.last_background_sync_at = time.monotonic()
 
         if self.current_task == "driving_decision":

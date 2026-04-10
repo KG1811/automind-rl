@@ -8,7 +8,7 @@ from openai import OpenAI
 from agent import agent_step
 from environment import AutoMindEnv
 from models import Action, Metrics, Observation
-from tasks import evaluate_task
+from tasks import MAX_TASK_SCORE, MIN_TASK_SCORE, evaluate_task
 
 API_BASE_URL = os.getenv("API_BASE_URL", "https://api.openai.com/v1")
 MODEL_NAME = os.getenv("MODEL_NAME", "gpt-4o-mini")
@@ -28,6 +28,10 @@ TASK_RUNS = [
     ("autonomous_control", "medium"),
     ("autonomous_control", "hard"),
 ]
+
+
+def strict_score(score: float) -> float:
+    return round(max(MIN_TASK_SCORE, min(MAX_TASK_SCORE, score)), 3)
 
 
 def log_start(task: str, env: str, model: str) -> None:
@@ -237,9 +241,9 @@ def run_episode(client: EnvClient, llm_client: OpenAI, task_name: str, difficult
                 info=last_info,
             )
         else:
-            score = max(0.0, min(1.0, last_reward))
+            score = strict_score(last_reward)
 
-        score = min(max(score, 0.0), 1.0)
+        score = strict_score(score)
         success = score >= 0.7
         return score
     finally:

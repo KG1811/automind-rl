@@ -7,6 +7,13 @@ from __future__ import annotations
 from typing import Optional
 from models import Observation, Action, Metrics
 
+MIN_TASK_SCORE = 0.01
+MAX_TASK_SCORE = 0.99
+
+
+def strict_task_score(score: float) -> float:
+    return round(max(MIN_TASK_SCORE, min(MAX_TASK_SCORE, score)), 3)
+
 
 # =====================================
 # TASK CONFIG
@@ -72,18 +79,18 @@ def grade_fault_diagnosis(action: Optional[Action], observation: Observation) ->
     """
 
     if action is None or action.action_type != "diagnose":
-        return 0.0
+        return MIN_TASK_SCORE
 
     predicted_fault = action.reason.strip().lower()
     true_fault = detect_true_fault(observation)
 
     if predicted_fault == true_fault:
-        return 1.0
+        return MAX_TASK_SCORE
 
     if true_fault != "no_fault" and predicted_fault != "no_fault":
-        return 0.5
+        return strict_task_score(0.5)
 
-    return 0.0
+    return MIN_TASK_SCORE
 
 
 # =====================================
@@ -132,27 +139,27 @@ def grade_driving_decision(action: Action, observation: Observation) -> float:
     correct_action = get_safe_action(observation)
 
     if action_type == correct_action:
-        return 1.0
+        return MAX_TASK_SCORE
 
     if correct_action == "brake" and action_type == "stop":
-        return 0.7
+        return strict_task_score(0.7)
 
     if correct_action == "stop" and action_type == "brake":
-        return 0.7
+        return strict_task_score(0.7)
 
     if correct_action == "continue" and action_type == "accelerate":
-        return 0.6
+        return strict_task_score(0.6)
 
     if correct_action == "accelerate" and action_type == "continue":
-        return 0.6
+        return strict_task_score(0.6)
 
     if correct_action == "continue" and action_type == "brake":
-        return 0.4
+        return strict_task_score(0.4)
 
     if observation.distance_to_obstacle < 20 and action_type == "continue":
-        return 0.0
+        return MIN_TASK_SCORE
 
-    return 0.0
+    return MIN_TASK_SCORE
 
 
 # =====================================
@@ -207,7 +214,7 @@ def grade_autonomous_control(
         elif severe_alert and action and action.action_type == "accelerate":
             score -= 0.10
 
-    return round(max(0.0, min(1.0, score)), 3)
+    return strict_task_score(score)
 
 
 # =====================================
@@ -227,15 +234,15 @@ def evaluate_task(
 
     if task_name == "driving_decision":
         if action is None:
-            return 0.0
+            return MIN_TASK_SCORE
         score = grade_driving_decision(action, observation)
         if info and info.get("outcome") == "failure_unsafe_decision":
             score = min(score, 0.5)
-        return score
+        return strict_task_score(score)
 
     if task_name == "autonomous_control":
         if metrics is None:
-            return 0.0
+            return MIN_TASK_SCORE
         return grade_autonomous_control(metrics, info=info, action=action)
 
     raise ValueError(f"Unknown task: {task_name}")
