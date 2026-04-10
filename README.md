@@ -11,9 +11,11 @@ pinned: false
 
 # AutoMind OpenEnv
 
+AutoMind predicts vehicle failures and degradation risks before they become critical, then enables the agent to take preventive actions such as raising alerts, choosing safe maneuvers, and scheduling service interventions.
+
 AutoMind OpenEnv is a real-world OpenEnv benchmark for fleet maintenance triage and roadside decision support. Agents must diagnose vehicle issues from telemetry, choose safe immediate maneuvers, and coordinate recovery actions such as service dispatch and rescheduling.
 
-This environment is built around decisions that connected mobility systems and fleet operators actually make in production: interpreting live telemetry, reacting to degraded health, and escalating service when safety and maintenance conditions justify it.
+This environment is built around decisions that connected mobility systems and fleet operators actually make in production: interpreting live telemetry, anticipating failures, reacting to degraded vehicle health, and escalating service when safety and maintenance conditions justify it.
 
 ## Companion Android App
 
