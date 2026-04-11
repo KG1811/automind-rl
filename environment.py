@@ -1209,15 +1209,15 @@ class AutoMindEnv:
             for alert in alerts
         )
 
-        safety = max(0, min(1, 1 - collision_risk))
+        safety = max(1e-2, min(0.99, 1 - collision_risk))
         efficiency = max(0, min(1, observation.speed / 90.0))
-        diagnosis = 1 if alerts else 0.65
+        diagnosis = 0.99 if alerts else 0.65
         health_component = max(0, min(1, health_snapshot["overall"] / 100.0))
         sequence = min(1, max(0.2, len(observation.history) / 6.0))
 
         service_component = 0.55
         if severe_alert and action.action_type in {"request_service", "reschedule_service"}:
-            service_component = 1
+            service_component = 0.99
         elif action.action_type == "cancel_service":
             service_component = 0.10 if severe_alert else 0.40
         elif severe_alert and action.action_type in {"brake", "stop"}:
@@ -1257,7 +1257,7 @@ class AutoMindEnv:
         return total
 
     def _compute_metrics(self, collision_risk: float, observation: Observation) -> Metrics:
-        safety = 0 if collision_risk >= 0.97 else max(0, 1 - collision_risk)
+        safety = 1e-2 if collision_risk >= 0.97 else max(1e-2, min(0.99, 1 - collision_risk))
         efficiency = max(0, min(1, observation.speed / 90.0))
 
         diagnosis = 0.5
@@ -1269,7 +1269,7 @@ class AutoMindEnv:
             or observation.failures.low_oil
             or observation.failures.battery_issue
         ):
-            diagnosis = 1
+            diagnosis = 0.99
 
         sequence = min(1, self.episode_state.step_count / 10.0)
 
@@ -1326,7 +1326,7 @@ class AutoMindEnv:
                     "outcome": "success_diagnosis" if score >= 0.95 else "failure_diagnosis",
                 },
                 metrics=Metrics(
-                    safety_score=self._strict_metric_score(1),
+                    safety_score=self._strict_metric_score(0.99),
                     efficiency_score=self._strict_metric_score(0),
                     diagnosis_score=self._strict_metric_score(score),
                     sequence_score=self._strict_metric_score(1),
