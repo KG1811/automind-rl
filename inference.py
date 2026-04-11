@@ -8,7 +8,7 @@ from openai import OpenAI
 from agent import agent_step
 from environment import AutoMindEnv
 from models import Action, Metrics, Observation
-from tasks import MAX_TASK_SCORE, MIN_TASK_SCORE, evaluate_task, safe_score
+from tasks import evaluate_task
 
 API_BASE_URL = os.getenv("API_BASE_URL", "https://api.openai.com/v1")
 MODEL_NAME = os.getenv("MODEL_NAME", "gpt-4o-mini")
@@ -17,6 +17,12 @@ LOCAL_IMAGE_NAME = os.getenv("LOCAL_IMAGE_NAME")
 ENV_BASE_URL = os.getenv("ENV_BASE_URL", "http://127.0.0.1:8000")
 MAX_STEPS = 20
 TEMPERATURE = 0.1
+
+
+def safe_score(x: float) -> float:
+    return max(0.05, min(0.95, float(x)))
+
+
 TASK_RUNS = [
     ("fault_diagnosis", "easy"),
     ("fault_diagnosis", "medium"),
@@ -30,16 +36,12 @@ TASK_RUNS = [
 ]
 
 
-def strict_score(score: float) -> float:
-    return float(round(safe_score(score), 3))
-
-
 def format_bool(value: bool) -> str:
     return "true" if value else "false"
 
 
 def format_reward(value: float) -> str:
-    return f"{strict_score(value):.2f}"
+    return f"{safe_score(value):.2f}"
 
 
 def format_action(action: Action) -> str:
@@ -52,37 +54,23 @@ def format_action(action: Action) -> str:
 
 
 def log_start(task: str, env: str, model: str) -> None:
-    print("[START]", flush=True)
-    print(json.dumps({"task": task, "env": env, "model": model}), flush=True)
+    print(f"[START] task={task} env={env} model={model}", flush=True)
+
 
 def log_step(step: int, action: str, reward: float, done: bool, error: Optional[str]) -> None:
-    print("[STEP]", flush=True)
-    action_dict = {}
-    try:
-        action_dict = json.loads(action)
-    except json.JSONDecodeError:
-        pass
+    error_value = "null" if error is None else error.replace("\n", " ")
     print(
-        json.dumps({
-            "step": step,
-            "action": action_dict,
-            "reward": round(reward, 3),
-            "done": done,
-            "error": error
-        }),
+        f"[STEP] step={step} action={action} reward={format_reward(reward)} "
+        f"done={format_bool(done)} error={error_value}",
         flush=True,
     )
 
-def log_end(success: bool, steps: int, score: float, rewards: list[float], task_name: str) -> None:
-    print("[END]", flush=True)
+
+def log_end(success: bool, steps: int, rewards: list[float]) -> None:
+    safe_rewards = [safe_score(r) for r in rewards]
+    reward_values = ",".join(format_reward(reward) for reward in safe_rewards)
     print(
-        json.dumps({
-            "task": task_name,
-            "success": bool(success),
-            "steps": int(steps),
-            "score": round(score, 3),
-            "rewards": [round(r, 3) for r in rewards]
-        }),
+        f"[END] success={format_bool(success)} steps={steps} rewards={reward_values}",
         flush=True,
     )
 
@@ -132,7 +120,7 @@ def get_model_action(client: OpenAI, observation: dict, task_name: str) -> Actio
     payload = json.loads(text)
     return Action(
         action_type=str(payload["action_type"]).strip(),
-        value=float(payload.get("value", 0.5)),
+        value=safe_score(payload.get("value", 0.5)),
         reason=str(payload.get("reason", "")).strip(),
     )
 
@@ -188,7 +176,7 @@ def run_episode(client: EnvClient, llm_client: OpenAI, task_name: str, difficult
     rewards: list[float] = []
     steps_taken = 0
     step_idx = 0
-    score = MIN_TASK_SCORE
+    score = 0.05
     success = False
 
     log_start(task=task_name, env=client.mode(), model=MODEL_NAME)
@@ -198,7 +186,7 @@ def run_episode(client: EnvClient, llm_client: OpenAI, task_name: str, difficult
         last_action: Optional[Action] = None
         last_metrics: Optional[Metrics] = None
         last_info: Optional[dict] = None
-        last_reward = MIN_TASK_SCORE
+        last_reward = 0.05
 
         for step_idx in range(1, MAX_STEPS + 1):
             observation_obj = Observation(**obs)
@@ -209,13 +197,13 @@ def run_episode(client: EnvClient, llm_client: OpenAI, task_name: str, difficult
 
             result = client.step(action)
             obs = result["observation"]
-            reward = strict_score(float(result["reward"]))
+            reward = safe_score(float(result["reward"]))
             done = bool(result["done"])
             metrics = result["metrics"]
             info = result["info"]
             error = info.get("last_action_error") if isinstance(info, dict) else None
 
-            rewards.append(reward)
+            rewards.append(safe_score(reward))
             steps_taken = step_idx
             last_reward = reward
             last_action = action
@@ -234,30 +222,33 @@ def run_episode(client: EnvClient, llm_client: OpenAI, task_name: str, difficult
                 break
 
         if last_action is not None and last_metrics is not None:
-            score = evaluate_task(
-                task_name=task_name,
-                action=last_action,
-                observation=Observation(**obs),
-                metrics=last_metrics,
-                info=last_info,
+            score = safe_score(
+                evaluate_task(
+                    task_name=task_name,
+                    action=last_action,
+                    observation=Observation(**obs),
+                    metrics=last_metrics,
+                    info=last_info,
+                )
             )
         else:
-            score = strict_score(last_reward)
+            score = safe_score(last_reward)
 
-        score = strict_score(score)
+        score = safe_score(score)
+        rewards = [safe_score(r) for r in rewards]
         success = score >= 0.7
         return score
     except Exception as exc:
         log_step(
             step=max(step_idx, 1),
             action="{}",
-            reward=MIN_TASK_SCORE,
+            reward=0.05,
             done=True,
             error=str(exc),
         )
-        return MIN_TASK_SCORE
+        return 0.05
     finally:
-        log_end(success=success, steps=steps_taken, score=score, rewards=rewards, task_name=task_name)
+        log_end(success=success, steps=steps_taken, rewards=[safe_score(r) for r in rewards])
 
 
 if __name__ == "__main__":
