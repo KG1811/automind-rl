@@ -65,15 +65,35 @@ def step(action: Action, car_id: str = "default"):
     if not env.is_initialized():
         env.reset()
     result = env.step(action)
-    
-    # Extra safety enforcement across all output outputs
+
+    # Extra safety enforcement across all API outputs
     result.reward = safe_score(result.reward)
     if result.metrics:
         result.metrics.safety_score = safe_score(result.metrics.safety_score)
         result.metrics.efficiency_score = safe_score(result.metrics.efficiency_score)
         result.metrics.diagnosis_score = safe_score(result.metrics.diagnosis_score)
         result.metrics.sequence_score = safe_score(result.metrics.sequence_score)
-        
+    if result.info:
+        if "task_score" in result.info:
+            result.info["task_score"] = safe_score(result.info["task_score"])
+        if "score" in result.info:
+            result.info["score"] = safe_score(result.info["score"])
+        breakdown = result.info.get("reward_breakdown")
+        if isinstance(breakdown, dict):
+            for key in (
+                "total",
+                "safety_component",
+                "efficiency_component",
+                "diagnosis_component",
+                "service_component",
+                "health_component",
+                "sequence_component",
+            ):
+                if key in breakdown:
+                    breakdown[key] = safe_score(breakdown[key])
+            if "penalty_component" in breakdown:
+                breakdown["penalty_component"] = max(-0.95, min(-0.05, float(breakdown["penalty_component"])))
+
     return result.model_dump()
 
 @app.get("/state")
