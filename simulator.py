@@ -57,17 +57,17 @@ class AutoMindSimulator:
             targetSpeed = 45.0 + 75.0 * action_value
             targetThrottle = 40.0 + 45.0 * action_value
         elif action_type == "brake":
-            targetSpeed = max(0.0, state.speed - 30.0 * action_value)
-            targetThrottle = 0.0
+            targetSpeed = max(0, state.speed - 30.0 * action_value)
+            targetThrottle = 0
         elif action_type == "stop":
-            targetSpeed = 0.0
-            targetThrottle = 0.0
+            targetSpeed = 0
+            targetThrottle = 0
         elif action_type == "request_service":
-            targetSpeed = max(0.0, state.speed - 10.0)
-            targetThrottle = max(0.0, state.throttle - 15.0)
+            targetSpeed = max(0, state.speed - 10.0)
+            targetThrottle = max(0, state.throttle - 15.0)
         elif action_type in {"turn_left", "turn_right"}:
-            targetSpeed = max(0.0, state.speed - 15.0)
-            targetThrottle = max(0.0, state.throttle - 10.0)
+            targetSpeed = max(0, state.speed - 15.0)
+            targetThrottle = max(0, state.throttle - 10.0)
         else: # continue
             # Simulate dynamic real-world driving behavior
             if state.distance_to_obstacle > 90:
@@ -77,33 +77,33 @@ class AutoMindSimulator:
                 targetSpeed = clamp(state.speed + self.rng.uniform(-5, 10), 20.0, 75.0)
                 targetThrottle = clamp(state.throttle + self.rng.uniform(-8, 8), 20.0, 55.0)
             elif state.distance_to_obstacle < 20:
-                targetSpeed = max(0.0, state.speed - 25.0)
-                targetThrottle = 0.0
+                targetSpeed = max(0, state.speed - 25.0)
+                targetThrottle = 0
             else:
                 targetSpeed = state.speed + self.rng.uniform(-4.0, 4.0)
                 targetThrottle = state.throttle + self.rng.uniform(-5.0, 5.0)
 
         # Apply ECU physics to reach targets
         speed_delta = (targetSpeed - state.speed) * 0.20 + self.rng.uniform(-2.0, 2.0)
-        speed = clamp(state.speed + speed_delta, 0.0, 160.0)
+        speed = clamp(state.speed + speed_delta, 0, 160.0)
         
         throttle_delta = (targetThrottle - state.throttle) * 0.25 + self.rng.uniform(-3.0, 3.0)
-        throttle = clamp(state.throttle + throttle_delta, 0.0, 100.0)
+        throttle = clamp(state.throttle + throttle_delta, 0, 100.0)
         
         # Apply road condition friction and brake failures
         if action_type in {"brake", "stop"}:
-            brake_effect = 1.0
+            brake_effect = 1
             if state.failures.brake_failure:
                 brake_effect = 0.35
             
-            friction = 1.0
+            friction = 1
             if state.road_condition == "wet":
                 friction = 0.8
             elif state.road_condition == "rain":
                 friction = 0.65
                 
             drop_factor = 15.0 * action_value if action_type == "brake" else 25.0
-            speed = clamp(state.speed - drop_factor * friction * brake_effect, 0.0, 160.0)
+            speed = clamp(state.speed - drop_factor * friction * brake_effect, 0, 160.0)
 
         acceleration = speed - state.speed
 
@@ -127,9 +127,9 @@ class AutoMindSimulator:
         if gear == 0:
             rpm = clamp(750.0 + throttle * 4.0 + self.rng.uniform(-50.0, 50.0), 700.0, 5200.0)
 
-        engine_load = clamp((throttle * 0.75) + (speed * 0.35), 0.0, 100.0)
-        transmission_load = clamp((speed * 0.45) + (gear * 6.0), 0.0, 100.0)
-        fuel_rate = clamp(0.6 + (rpm / 2800.0) + (throttle / 55.0), 0.0, 40.0)
+        engine_load = clamp((throttle * 0.75) + (speed * 0.35), 0, 100.0)
+        transmission_load = clamp((speed * 0.45) + (gear * 6.0), 0, 100.0)
+        fuel_rate = clamp(0.6 + (rpm / 2800.0) + (throttle / 55.0), 0, 40.0)
         drive_mode = self._next_drive_mode(speed=speed, throttle=throttle)
 
         return {
@@ -229,7 +229,7 @@ class AutoMindSimulator:
             previous_odometer_km=next_state.vehicle_signals.odometer_km,
             battery_issue_active=next_state.failures.battery_issue,
             low_oil_active=next_state.failures.low_oil,
-            dt_seconds=0.0,
+            dt_seconds=0,
             rng=self.rng,
         )
 
@@ -263,7 +263,7 @@ class AutoMindSimulator:
             obstacle_relative_motion=obstacle_relative_motion,
         )
 
-        distance_to_obstacle = max(0.0, distance_to_obstacle - (traffic_pressure * 2.2))
+        distance_to_obstacle = max(0, distance_to_obstacle - (traffic_pressure * 2.2))
 
         engine_temp = update_engine_temperature(
             engine_temp=state.engine_temp,
@@ -302,7 +302,7 @@ class AutoMindSimulator:
             brake_failure=failures.brake_failure,
         )
 
-        is_collision = distance_to_obstacle <= 0.0 or collision_risk >= 0.97
+        is_collision = distance_to_obstacle <= 0 or collision_risk >= 0.97
         engine_failure = is_engine_failure(
             engine_temp=engine_temp,
             oil_level=oil_level,
@@ -342,12 +342,12 @@ class AutoMindSimulator:
             transmission_load=round(powertrain["transmission_load"], 2),
             fuel_rate=round(powertrain["fuel_rate"], 2),
             acceleration=round(powertrain["acceleration"], 2),
-            engine_temp=round(clamp(engine_temp, 0.0, 150.0), 2),
-            distance_to_obstacle=round(clamp(distance_to_obstacle, 0.0, 300.0), 2),
+            engine_temp=round(clamp(engine_temp, 0, 150.0), 2),
+            distance_to_obstacle=round(clamp(distance_to_obstacle, 0, 300.0), 2),
             road_condition=state.road_condition,
             drive_mode=powertrain["drive_mode"],
-            oil_level=round(clamp(oil_level, 0.0, 100.0), 2),
-            battery_health=round(clamp(battery_health, 0.0, 100.0), 2),
+            oil_level=round(clamp(oil_level, 0, 100.0), 2),
+            battery_health=round(clamp(battery_health, 0, 100.0), 2),
             latitude=round(latitude, 6),
             longitude=round(longitude, 6),
             heading=round(heading, 2),
@@ -360,7 +360,7 @@ class AutoMindSimulator:
             rng=self.rng,
             value=next_state.speed,
             std_dev=1.2,
-            low=0.0,
+            low=0,
             high=220.0,
         )
 
@@ -368,15 +368,15 @@ class AutoMindSimulator:
             rng=self.rng,
             value=next_state.rpm,
             std_dev=45.0,
-            low=0.0,
+            low=0,
             high=8000.0,
         )
 
         observed_engine_temp = add_sensor_noise(
             rng=self.rng,
             value=next_state.engine_temp,
-            std_dev=1.0,
-            low=0.0,
+            std_dev=1,
+            low=0,
             high=150.0,
         )
 

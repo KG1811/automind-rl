@@ -61,27 +61,27 @@ class AutoMindEnv:
         self.current_fault_phase = self.vehicle_profile["fault_profile"]
         self.current_scenario: dict = {}
         self.last_reward_breakdown = RewardBreakdown(
-            total=strict_task_score(0.0),
-            safety_component=strict_task_score(1.0),
-            efficiency_component=strict_task_score(1.0),
+            total=strict_task_score(0),
+            safety_component=strict_task_score(1),
+            efficiency_component=strict_task_score(1),
             diagnosis_component=strict_task_score(0.5),
-            service_component=strict_task_score(0.0),
-            health_component=strict_task_score(1.0),
-            sequence_component=strict_task_score(0.0),
-            penalty_component=-0.01,
+            service_component=strict_task_score(0),
+            health_component=strict_task_score(1),
+            sequence_component=strict_task_score(0),
+            penalty_component=-1e-2,
         )
 
         self.last_metrics = Metrics(
-            safety_score=strict_task_score(1.0),
-            efficiency_score=strict_task_score(1.0),
+            safety_score=strict_task_score(1),
+            efficiency_score=strict_task_score(1),
             diagnosis_score=strict_task_score(0.5),
-            sequence_score=strict_task_score(0.0),
+            sequence_score=strict_task_score(0),
         )
-        self.last_reward = 0.0
+        self.last_reward = strict_task_score(0)
         self.last_done = False
         self.last_info: dict = {
             "outcome": "not_initialized",
-            "collision_risk": 0.0,
+            "collision_risk": 0,
             "override_active": False,
             "override_count": 0,
             "step_count": 0,
@@ -93,8 +93,8 @@ class AutoMindEnv:
             "service_booking": None,
             "reward_breakdown": self.last_reward_breakdown.model_dump(),
             "scenario": {},
-            "task_score": strict_task_score(0.0),
-            "score": strict_task_score(0.0),
+            "task_score": strict_task_score(0),
+            "score": strict_task_score(0),
         }
 
     def _strict_metric_score(self, value: float) -> float:
@@ -180,7 +180,7 @@ class AutoMindEnv:
 
     def _spawn_location(self, rng: random.Random) -> tuple[float, float, float]:
         start_points = [
-            (28.613900, 77.209000, 0.0),
+            (28.613900, 77.209000, 0),
             (28.459500, 77.026600, 82.0),
             (28.535500, 77.391000, 48.0),
             (28.669200, 77.453800, 124.0),
@@ -188,8 +188,8 @@ class AutoMindEnv:
         ]
         lat, lon, heading = start_points[self.seed % len(start_points)]
         return (
-            round(lat + rng.uniform(-0.01, 0.01), 6),
-            round(lon + rng.uniform(-0.01, 0.01), 6),
+            round(lat + rng.uniform(-0.01, 1e-2), 6),
+            round(lon + rng.uniform(-0.01, 1e-2), 6),
             round((heading + rng.uniform(-18.0, 18.0)) % 360.0, 2),
         )
 
@@ -802,7 +802,7 @@ class AutoMindEnv:
             action_type="continue",
             action_value=0.25,
             fuel_level=rotated.vehicle_signals.fuel_level if rotated.vehicle_signals else 50.0,
-            odometer_km=rotated.vehicle_signals.odometer_km if rotated.vehicle_signals else 0.0,
+            odometer_km=rotated.vehicle_signals.odometer_km if rotated.vehicle_signals else 0,
         )
 
     def _attach_vehicle_payload(
@@ -837,7 +837,7 @@ class AutoMindEnv:
             previous_odometer_km=odometer_km,
             battery_issue_active=telemetry.failures.battery_issue,
             low_oil_active=telemetry.failures.low_oil,
-            dt_seconds=0.0,
+            dt_seconds=0,
             rng=self.rng,
         )
         events = build_vehicle_events(
@@ -904,20 +904,20 @@ class AutoMindEnv:
         self.sequence_id = 0
         self.current_fault_phase = self.vehicle_profile["fault_profile"]
         self.last_done = False
-        self.last_reward = 0.0
+        self.last_reward = strict_task_score(0)
         self.last_reward_breakdown = RewardBreakdown(
-            total=strict_task_score(0.0),
-            safety_component=strict_task_score(1.0),
-            efficiency_component=strict_task_score(1.0),
+            total=strict_task_score(0),
+            safety_component=strict_task_score(1),
+            efficiency_component=strict_task_score(1),
             diagnosis_component=strict_task_score(0.5),
-            service_component=strict_task_score(0.0),
-            health_component=strict_task_score(1.0),
-            sequence_component=strict_task_score(0.0),
-            penalty_component=-0.01,
+            service_component=strict_task_score(0),
+            health_component=strict_task_score(1),
+            sequence_component=strict_task_score(0),
+            penalty_component=-1e-2,
         )
         self.last_info = {
             "outcome": "in_progress",
-            "collision_risk": 0.0,
+            "collision_risk": 0,
             "override_active": False,
             "override_count": 0,
             "step_count": 0,
@@ -929,8 +929,8 @@ class AutoMindEnv:
             "service_booking": None,
             "reward_breakdown": self.last_reward_breakdown.model_dump(),
             "scenario": self.current_scenario,
-            "task_score": strict_task_score(0.0),
-            "score": strict_task_score(0.0),
+            "task_score": strict_task_score(0),
+            "score": strict_task_score(0),
         }
 
         self.last_metrics = self._compute_metrics(
@@ -1151,8 +1151,8 @@ class AutoMindEnv:
             "vehicle_name": self.vehicle_profile["name"],
             "dashboard": dashboard,
             "ml_predictions": health_snapshot["ml_predictions"],
-            "task_score": self.last_info.get("task_score", strict_task_score(0.0)),
-            "score": self.last_info.get("task_score", strict_task_score(0.0)),
+            "task_score": self.last_info.get("task_score", strict_task_score(0)),
+            "score": self.last_info.get("task_score", strict_task_score(0)),
         }
 
     def _finish_task_episode(
@@ -1191,16 +1191,16 @@ class AutoMindEnv:
     ) -> float:
         if is_collision:
             self.last_reward_breakdown = RewardBreakdown(
-                total=strict_task_score(0.0),
-                safety_component=strict_task_score(0.0),
-                efficiency_component=strict_task_score(0.0),
-                diagnosis_component=strict_task_score(0.0),
-                service_component=strict_task_score(0.0),
-                health_component=strict_task_score(0.0),
-                sequence_component=strict_task_score(self.episode_state.step_count / max(1.0, self.max_steps)),
+                total=strict_task_score(0),
+                safety_component=strict_task_score(0),
+                efficiency_component=strict_task_score(0),
+                diagnosis_component=strict_task_score(0),
+                service_component=strict_task_score(0),
+                health_component=strict_task_score(0),
+                sequence_component=strict_task_score(self.episode_state.step_count / max(1, self.max_steps)),
                 penalty_component=-0.99,
             )
-            return strict_task_score(0.0)
+            return strict_task_score(0)
 
         alerts = self._build_active_alerts(observation, collision_risk)
         health_snapshot = self._compute_health_snapshot(observation, collision_risk)
@@ -1209,15 +1209,15 @@ class AutoMindEnv:
             for alert in alerts
         )
 
-        safety = max(0.0, min(1.0, 1.0 - collision_risk))
-        efficiency = max(0.0, min(1.0, observation.speed / 90.0))
-        diagnosis = 1.0 if alerts else 0.65
-        health_component = max(0.0, min(1.0, health_snapshot["overall"] / 100.0))
-        sequence = min(1.0, max(0.2, len(observation.history) / 6.0))
+        safety = max(0, min(1, 1 - collision_risk))
+        efficiency = max(0, min(1, observation.speed / 90.0))
+        diagnosis = 1 if alerts else 0.65
+        health_component = max(0, min(1, health_snapshot["overall"] / 100.0))
+        sequence = min(1, max(0.2, len(observation.history) / 6.0))
 
         service_component = 0.55
         if severe_alert and action.action_type in {"request_service", "reschedule_service"}:
-            service_component = 1.0
+            service_component = 1
         elif action.action_type == "cancel_service":
             service_component = 0.10 if severe_alert else 0.40
         elif severe_alert and action.action_type in {"brake", "stop"}:
@@ -1225,7 +1225,7 @@ class AutoMindEnv:
         elif not severe_alert and action.action_type in {"request_service", "reschedule_service"}:
             service_component = 0.30
 
-        penalty = 0.0
+        penalty = 0
         if collision_risk > 0.8 and action.action_type == "accelerate":
             penalty -= 0.40
         elif collision_risk > 0.6 and action.action_type == "continue":
@@ -1257,8 +1257,8 @@ class AutoMindEnv:
         return total
 
     def _compute_metrics(self, collision_risk: float, observation: Observation) -> Metrics:
-        safety = 0.0 if collision_risk >= 0.97 else max(0.0, 1.0 - collision_risk)
-        efficiency = max(0.0, min(1.0, observation.speed / 90.0))
+        safety = 0 if collision_risk >= 0.97 else max(0, 1 - collision_risk)
+        efficiency = max(0, min(1, observation.speed / 90.0))
 
         diagnosis = 0.5
         if (
@@ -1269,9 +1269,9 @@ class AutoMindEnv:
             or observation.failures.low_oil
             or observation.failures.battery_issue
         ):
-            diagnosis = 1.0
+            diagnosis = 1
 
-        sequence = min(1.0, self.episode_state.step_count / 10.0)
+        sequence = min(1, self.episode_state.step_count / 10.0)
 
         return Metrics(
             safety_score=self._strict_metric_score(safety),
@@ -1305,14 +1305,14 @@ class AutoMindEnv:
             self.episode_state.step_count += 1
             score = grade_fault_diagnosis(action, self.current_observation)
             self.last_reward_breakdown = RewardBreakdown(
-                total=round(score, 3),
-                safety_component=1.0,
-                efficiency_component=0.0,
-                diagnosis_component=round(score, 3),
-                service_component=0.0,
-                health_component=max(0.0, min(1.0, self.compute_health(self.current_observation, 0.02) / 100.0)),
-                sequence_component=1.0,
-                penalty_component=0.0,
+                total=strict_task_score(score),
+                safety_component=strict_task_score(1),
+                efficiency_component=strict_task_score(0),
+                diagnosis_component=strict_task_score(score),
+                service_component=strict_task_score(0),
+                health_component=strict_task_score(self.compute_health(self.current_observation, 0.02) / 100.0),
+                sequence_component=strict_task_score(1),
+                penalty_component=-1e-2,
             )
             self.last_info = self._build_info(
                 observation=self.current_observation,
@@ -1326,10 +1326,10 @@ class AutoMindEnv:
                     "outcome": "success_diagnosis" if score >= 0.95 else "failure_diagnosis",
                 },
                 metrics=Metrics(
-                    safety_score=self._strict_metric_score(1.0),
-                    efficiency_score=self._strict_metric_score(0.0),
+                    safety_score=self._strict_metric_score(1),
+                    efficiency_score=self._strict_metric_score(0),
                     diagnosis_score=self._strict_metric_score(score),
-                    sequence_score=self._strict_metric_score(1.0),
+                    sequence_score=self._strict_metric_score(1),
                 ),
             )
 
@@ -1346,7 +1346,7 @@ class AutoMindEnv:
             self.override_count += 1
             applied_action = Action(
                 action_type="accelerate",
-                value=min(1.0, max(0.2, action.value)),
+                value=min(1, max(0.2, action.value)),
                 reason="Human override",
             )
 
@@ -1398,10 +1398,10 @@ class AutoMindEnv:
                 safety_component=strict_task_score(self.last_metrics.safety_score),
                 efficiency_component=strict_task_score(self.last_metrics.efficiency_score),
                 diagnosis_component=strict_task_score(decision_score),
-                service_component=strict_task_score(0.0),
+                service_component=strict_task_score(0),
                 health_component=strict_task_score(self.last_info.get("health_score", 0) / 100.0),
-                sequence_component=strict_task_score(1.0),
-                penalty_component=-0.01,
+                sequence_component=strict_task_score(1),
+                penalty_component=-1e-2,
             )
             self.last_info["reward_breakdown"] = self.last_reward_breakdown.model_dump()
             return self._finish_task_episode(
@@ -1420,7 +1420,7 @@ class AutoMindEnv:
                     safety_score=self._strict_metric_score(self.last_metrics.safety_score),
                     efficiency_score=self._strict_metric_score(self.last_metrics.efficiency_score),
                     diagnosis_score=self._strict_metric_score(decision_score),
-                    sequence_score=self._strict_metric_score(1.0),
+                    sequence_score=self._strict_metric_score(1),
                 ),
             )
 
@@ -1460,7 +1460,7 @@ class AutoMindEnv:
             "active_alerts": active_alerts,
             "ecu": self._build_ecu_snapshot(
                 observation=self.current_observation,
-                collision_risk=float(self.last_info.get("collision_risk", 0.0)),
+                collision_risk=float(self.last_info.get("collision_risk", 0)),
                 active_alerts=active_alerts,
             ),
         }
@@ -1472,6 +1472,6 @@ class AutoMindEnv:
         self._sync_background_state()
         return self._build_ecu_snapshot(
             observation=self.current_observation,
-            collision_risk=float(self.last_info.get("collision_risk", 0.0)),
+            collision_risk=float(self.last_info.get("collision_risk", 0)),
             active_alerts=self.last_info.get("active_alerts", []),
         )

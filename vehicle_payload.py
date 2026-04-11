@@ -16,16 +16,16 @@ def compute_brake_pedal(action_type: str, action_value: float) -> float:
     if action_type == "stop":
         return 100.0
     if action_type == "brake":
-        return clamp(15.0 + (85.0 * action_value), 0.0, 100.0)
+        return clamp(15.0 + (85.0 * action_value), 0, 100.0)
     if action_type == "request_service":
         return 18.0
     if action_type in {"turn_left", "turn_right"}:
         return 8.0
-    return 0.0
+    return 0
 
 
 def compute_ignition_on(speed: float, throttle: float, action_type: str) -> bool:
-    if action_type in {"stop", "request_service"} and speed < 0.5 and throttle < 1.0:
+    if action_type in {"stop", "request_service"} and speed < 0.5 and throttle < 1:
         return False
     return True
 
@@ -38,7 +38,7 @@ def compute_charging_active(
 ) -> bool:
     if not ignition_on or battery_issue_active:
         return False
-    return speed > 1.0 or throttle > 3.0
+    return speed > 1 or throttle > 3.0
 
 
 def compute_oil_temp(engine_temp: float, rpm: float, action_type: str, rng: random.Random) -> float:
@@ -55,8 +55,8 @@ def compute_oil_pressure(
     low_oil_active: bool,
 ) -> float:
     base = 110.0 + rpm * 0.065
-    temp_penalty = max(0.0, oil_temp - 110.0) * 1.4
-    oil_penalty = max(0.0, 25.0 - oil_level) * 3.0
+    temp_penalty = max(0, oil_temp - 110.0) * 1.4
+    oil_penalty = max(0, 25.0 - oil_level) * 3.0
     if low_oil_active:
         oil_penalty += 45.0
     return clamp(base - temp_penalty - oil_penalty, 35.0, 780.0)
@@ -72,11 +72,11 @@ def update_fuel_level(
     consumed_pct = (consumed_liters / FUEL_TANK_CAPACITY_L) * 100.0
     if parked:
         consumed_pct *= 0.35
-    return clamp(current_fuel_level - consumed_pct, 0.0, 100.0)
+    return clamp(current_fuel_level - consumed_pct, 0, 100.0)
 
 
 def update_odometer(current_odometer_km: float, speed: float, dt_seconds: float) -> float:
-    return max(0.0, current_odometer_km + speed * (dt_seconds / 3600.0))
+    return max(0, current_odometer_km + speed * (dt_seconds / 3600.0))
 
 
 def compute_battery_voltage(
@@ -176,7 +176,7 @@ def build_vehicle_signals(
         oil_temp=oil_temp,
         low_oil_active=low_oil_active,
     )
-    parked = speed < 1.0 and not ignition_on
+    parked = speed < 1 and not ignition_on
     fuel_level = update_fuel_level(
         current_fuel_level=previous_fuel_level,
         fuel_rate=fuel_rate,
@@ -242,8 +242,8 @@ def build_vehicle_events(
         is_collision=is_collision,
     )
 
-    parked = signals.speed < 1.0 and not signals.ignition_on
-    trip_active = signals.ignition_on and (signals.speed > 1.0 or signals.fuel_rate > 0.8)
+    parked = signals.speed < 1 and not signals.ignition_on
+    trip_active = signals.ignition_on and (signals.speed > 1 or signals.fuel_rate > 0.8)
     overspeed_event = signals.speed >= 100.0
     harsh_brake_event = signals.acceleration <= -5.5 or signals.brake_pedal >= 70.0
     low_battery_event = signals.battery_voltage < 11.8 or signals.battery_health < 25.0

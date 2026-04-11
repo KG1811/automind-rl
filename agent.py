@@ -55,7 +55,7 @@ def decide_action(obs, fault, urgency):
     temp_trend = get_temp_trend(obs.history)
 
     if obs.distance_to_obstacle < 12:
-        return "brake", 1.0, "critical obstacle distance"
+        return "brake", 1, "critical obstacle distance"
 
     if obs.distance_to_obstacle < 22 and obs.speed > 25:
         return "brake", 0.9, "closing in on obstacle"
@@ -66,7 +66,7 @@ def decide_action(obs, fault, urgency):
 
     # ⚠️ 2. FAULT HANDLING
     if fault == "engine_overheating" and urgency == "high":
-        return "stop", 1.0, f"critical overheating ({obs.engine_temp})"
+        return "stop", 1, f"critical overheating ({obs.engine_temp})"
 
     if fault == "low_oil":
         return "stop", 0.7, "low oil detected"
@@ -88,7 +88,7 @@ def decide_action_v2(obs, fault, urgency):
     temp_trend = get_temp_trend(obs.history)
 
     if obs.distance_to_obstacle < 12:
-        return "brake", 1.0, "critical obstacle distance"
+        return "brake", 1, "critical obstacle distance"
 
     if obs.distance_to_obstacle < 22 and obs.speed > 25:
         return "brake", 0.9, "closing in on obstacle"
@@ -100,8 +100,8 @@ def decide_action_v2(obs, fault, urgency):
 
     if fault == "engine_overheating" and urgency == "high":
         if obs.distance_to_obstacle < 35 or obs.speed > 25:
-            return "brake", 1.0, f"critical overheating with close obstacle ({obs.engine_temp})"
-        return "request_service", 1.0, f"critical overheating ({obs.engine_temp})"
+            return "brake", 1, f"critical overheating with close obstacle ({obs.engine_temp})"
+        return "request_service", 1, f"critical overheating ({obs.engine_temp})"
 
     if fault == "low_oil":
         if obs.distance_to_obstacle < 30 or obs.speed > 25:
@@ -132,7 +132,7 @@ def choose_immediate_safe_action(obs):
         or obs.engine_temp > 108
         or obs.oil_level < 24
     ):
-        return "brake", 1.0, "highest-priority safety maneuver"
+        return "brake", 1, "highest-priority safety maneuver"
 
     if obs.speed > 85 or (obs.road_condition in {"wet", "rain"} and obs.speed > 60):
         return "brake", 0.8, "reduce speed for current road risk"
@@ -151,7 +151,7 @@ def agent_step(observation, task_name="autonomous_control"):
     fault, urgency = diagnose_fault(observation)
 
     if task_name == "fault_diagnosis":
-        return Action(action_type="diagnose", value=1.0, reason=fault)
+        return Action(action_type="diagnose", value=1, reason=fault)
 
     if task_name == "driving_decision":
         action_type, value, reason = choose_immediate_safe_action(observation)

@@ -35,7 +35,7 @@ def update_oil_level(
     if speed < 10:
         drain -= 0.08
 
-    return clamp(oil_level - drain, 0.0, 100.0)
+    return clamp(oil_level - drain, 0, 100.0)
 
 
 def update_battery_health(
@@ -54,7 +54,7 @@ def update_battery_health(
     if battery_issue_active:
         drain += 0.25
 
-    return clamp(battery_health - drain, 0.0, 100.0)
+    return clamp(battery_health - drain, 0, 100.0)
 
 
 def infer_failure_state(

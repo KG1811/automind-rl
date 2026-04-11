@@ -99,7 +99,7 @@ You are controlling an automotive agent for the task "{task_name}".
 Return JSON only in this format:
 {{
   "action_type": "string",
-  "value": 0.0,
+  "value": 0,
   "reason": "short reason"
 }}
 
@@ -125,7 +125,7 @@ def get_model_action(client: OpenAI, observation: dict, task_name: str) -> Optio
         payload = json.loads(text)
         return Action(
             action_type=str(payload["action_type"]).strip(),
-            value=float(payload.get("value", 1.0)),
+            value=float(payload.get("value", 0.99)),
             reason=str(payload.get("reason", "")).strip(),
         )
     except Exception as exc:
@@ -183,7 +183,7 @@ class EnvClient:
 def run_episode(client: EnvClient, llm_client: OpenAI, task_name: str, difficulty: str) -> float:
     rewards: list[float] = []
     steps_taken = 0
-    score = 0.01
+    score = 1e-2
     success = False
 
     log_start(task=task_name, env=client.mode(), model=MODEL_NAME)
@@ -193,7 +193,7 @@ def run_episode(client: EnvClient, llm_client: OpenAI, task_name: str, difficult
         last_action: Optional[Action] = None
         last_metrics: Optional[Metrics] = None
         last_info: Optional[dict] = None
-        last_reward = 0.01
+        last_reward = 1e-2
 
         for step_idx in range(1, MAX_STEPS + 1):
             observation_obj = Observation(**obs)
@@ -237,9 +237,9 @@ def run_episode(client: EnvClient, llm_client: OpenAI, task_name: str, difficult
                 info=last_info,
             )
         else:
-            score = max(0.01, min(0.99, last_reward))
+            score = max(1e-2, min(0.99, last_reward))
 
-        score = min(max(score, 0.01), 0.99)
+        score = min(max(score, 1e-2), 0.99)
         success = score >= 0.7
         return score
     finally:

@@ -9,15 +9,15 @@ from models import Action
 
 
 TASKS = [
-    ("fault_diagnosis", "easy", Action(action_type="diagnose", value=1.0, reason="no_fault")),
-    ("fault_diagnosis", "medium", Action(action_type="diagnose", value=1.0, reason="low_oil")),
-    ("fault_diagnosis", "hard", Action(action_type="diagnose", value=1.0, reason="engine_overheating")),
+    ("fault_diagnosis", "easy", Action(action_type="diagnose", value=0.99, reason="no_fault")),
+    ("fault_diagnosis", "medium", Action(action_type="diagnose", value=0.99, reason="low_oil")),
+    ("fault_diagnosis", "hard", Action(action_type="diagnose", value=0.99, reason="engine_overheating")),
     ("driving_decision", "easy", Action(action_type="accelerate", value=0.5, reason="safe acceleration")),
     ("driving_decision", "medium", Action(action_type="continue", value=0.4, reason="maintain safe trajectory")),
-    ("driving_decision", "hard", Action(action_type="brake", value=1.0, reason="highest-priority safety maneuver")),
+    ("driving_decision", "hard", Action(action_type="brake", value=0.99, reason="highest-priority safety maneuver")),
     ("autonomous_control", "easy", Action(action_type="continue", value=0.4, reason="balanced cruise")),
     ("autonomous_control", "medium", Action(action_type="brake", value=0.6, reason="stabilize vehicle")),
-    ("autonomous_control", "hard", Action(action_type="request_service", value=1.0, reason="roadside recovery")),
+    ("autonomous_control", "hard", Action(action_type="request_service", value=0.99, reason="roadside recovery")),
 ]
 
 
@@ -67,7 +67,7 @@ def run_checks() -> None:
         reward = float(step_payload["reward"])
         metrics = step_payload["metrics"]
 
-        assert -1.0 <= reward <= 1.0, f"Reward out of range for {task_name}/{difficulty}: {reward}"
+        assert -1 <= reward <= 1, f"Reward out of range for {task_name}/{difficulty}: {reward}"
         for metric_name, metric_value in metrics.items():
             assert_score_range(float(metric_value), f"{task_name}/{difficulty}:{metric_name}")
 

@@ -16,29 +16,29 @@ class HistoryItem(BaseModel):
 
 
 class VehicleSignals(BaseModel):
-    speed: float = Field(0.0, ge=0, le=220)
-    rpm: float = Field(0.0, ge=0, le=8000)
-    throttle: float = Field(0.0, ge=0, le=100)
-    brake_pedal: float = Field(0.0, ge=0, le=100)
+    speed: float = Field(0, ge=0, le=220)
+    rpm: float = Field(0, ge=0, le=8000)
+    throttle: float = Field(0, ge=0, le=100)
+    brake_pedal: float = Field(0, ge=0, le=100)
     gear: int = Field(0, ge=0, le=6)
-    engine_load: float = Field(0.0, ge=0, le=100)
-    transmission_load: float = Field(0.0, ge=0, le=100)
-    fuel_rate: float = Field(0.0, ge=0, le=40)
-    acceleration: float = Field(0.0, ge=-12, le=12)
-    coolant_temp: float = Field(0.0, ge=0, le=150)
-    oil_temp: float = Field(0.0, ge=0, le=170)
-    oil_pressure: float = Field(0.0, ge=0, le=800)
-    oil_level: float = Field(0.0, ge=0, le=100)
-    battery_health: float = Field(0.0, ge=0, le=100)
-    battery_voltage: float = Field(0.0, ge=0, le=18)
-    fuel_level: float = Field(0.0, ge=0, le=100)
-    distance_to_obstacle: float = Field(0.0, ge=0, le=300)
+    engine_load: float = Field(0, ge=0, le=100)
+    transmission_load: float = Field(0, ge=0, le=100)
+    fuel_rate: float = Field(0, ge=0, le=40)
+    acceleration: float = Field(0, ge=-12, le=12)
+    coolant_temp: float = Field(0, ge=0, le=150)
+    oil_temp: float = Field(0, ge=0, le=170)
+    oil_pressure: float = Field(0, ge=0, le=800)
+    oil_level: float = Field(0, ge=0, le=100)
+    battery_health: float = Field(0, ge=0, le=100)
+    battery_voltage: float = Field(0, ge=0, le=18)
+    fuel_level: float = Field(0, ge=0, le=100)
+    distance_to_obstacle: float = Field(0, ge=0, le=300)
     drive_mode: str = "idle"
     road_condition: str = "dry"
-    latitude: float = Field(0.0, ge=-90, le=90)
-    longitude: float = Field(0.0, ge=-180, le=180)
-    heading: float = Field(0.0, ge=0, le=360)
-    odometer_km: float = Field(0.0, ge=0)
+    latitude: float = Field(0, ge=-90, le=90)
+    longitude: float = Field(0, ge=-180, le=180)
+    heading: float = Field(0, ge=0, le=360)
+    odometer_km: float = Field(0, ge=0)
     ignition_on: bool = True
     charging_active: bool = False
 
@@ -118,7 +118,7 @@ class TelemetryState(BaseModel):
 
 class Action(BaseModel):
     action_type: str
-    value: float = Field(..., ge=0, le=1)
+    value: float = Field(..., gt=0, lt=1)
     reason: str
 
 
@@ -130,19 +130,19 @@ class Metrics(BaseModel):
 
 
 class RewardBreakdown(BaseModel):
-    total: float = Field(..., gt=-1, lt=1)
+    total: float = Field(..., gt=0, lt=1)
     safety_component: float = Field(..., gt=0, lt=1)
     efficiency_component: float = Field(..., gt=0, lt=1)
     diagnosis_component: float = Field(..., gt=0, lt=1)
     service_component: float = Field(..., gt=0, lt=1)
     health_component: float = Field(..., gt=0, lt=1)
     sequence_component: float = Field(..., gt=0, lt=1)
-    penalty_component: float = Field(..., gt=-1, lt=0)
+    penalty_component: float = Field(..., gt=-1, lt=1)
 
 
 class StepResult(BaseModel):
     observation: Observation
-    reward: float
+    reward: float = Field(..., gt=0, lt=1)
     done: bool
     info: Dict[str, Any]
     metrics: Metrics

@@ -16,7 +16,7 @@ def test_fault_diagnosis():
     true_fault = detect_true_fault(obs)
     print("True Fault:", true_fault)
 
-    action = Action(action_type="diagnose", value=1.0, reason=true_fault)
+    action = Action(action_type="diagnose", value=0.99, reason=true_fault)
 
     score = evaluate_task(
         task_name="fault_diagnosis",

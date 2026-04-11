@@ -11,7 +11,7 @@ def clamp(value: float, low: float, high: float) -> float:
 
 
 def sigmoid(value: float) -> float:
-    return 1.0 / (1.0 + math.exp(-value))
+    return 1 / (1 + math.exp(-value))
 
 
 class PredictiveMaintenanceModel:
@@ -48,15 +48,15 @@ class PredictiveMaintenanceModel:
         battery_drop_trend = mean_battery - observation.battery_health
         speed_trend = observation.speed - mean_speed
 
-        speed_norm = clamp(observation.speed / 140.0, 0.0, 1.4)
-        throttle_norm = clamp(observation.throttle / 100.0, 0.0, 1.0)
-        load_norm = clamp(observation.engine_load / 100.0, 0.0, 1.0)
-        temp_norm = clamp((observation.engine_temp - 82.0) / 35.0, 0.0, 2.0)
-        oil_low_norm = clamp((45.0 - observation.oil_level) / 45.0, 0.0, 1.5)
-        voltage_low_norm = clamp((12.6 - signals.battery_voltage) / 1.8, 0.0, 1.6)
-        battery_low_norm = clamp((60.0 - observation.battery_health) / 60.0, 0.0, 1.5)
-        obstacle_norm = clamp((35.0 - observation.distance_to_obstacle) / 35.0, 0.0, 1.5)
-        traction_penalty = 0.22 if observation.road_condition == "wet" else (0.35 if observation.road_condition == "rain" else 0.0)
+        speed_norm = clamp(observation.speed / 140.0, 0, 1.4)
+        throttle_norm = clamp(observation.throttle / 100.0, 0, 1)
+        load_norm = clamp(observation.engine_load / 100.0, 0, 1)
+        temp_norm = clamp((observation.engine_temp - 82.0) / 35.0, 0, 2.0)
+        oil_low_norm = clamp((45.0 - observation.oil_level) / 45.0, 0, 1.5)
+        voltage_low_norm = clamp((12.6 - signals.battery_voltage) / 1.8, 0, 1.6)
+        battery_low_norm = clamp((60.0 - observation.battery_health) / 60.0, 0, 1.5)
+        obstacle_norm = clamp((35.0 - observation.distance_to_obstacle) / 35.0, 0, 1.5)
+        traction_penalty = 0.22 if observation.road_condition == "wet" else (0.35 if observation.road_condition == "rain" else 0)
 
         overheat_risk = sigmoid(
             -3.0
@@ -64,7 +64,7 @@ class PredictiveMaintenanceModel:
             + 0.9 * load_norm
             + 0.55 * speed_norm
             + 0.20 * throttle_norm
-            + 0.35 * clamp(temp_trend / 6.0, 0.0, 1.5)
+            + 0.35 * clamp(temp_trend / 6.0, 0, 1.5)
             + 0.60 * float(observation.failures.engine_overheating)
             + 0.25 * float(events.engine_overheat_warning)
         )
@@ -73,8 +73,8 @@ class PredictiveMaintenanceModel:
             -2.8
             + 4.0 * oil_low_norm
             + 0.40 * load_norm
-            + 0.35 * clamp(oil_drop_trend / 6.0, 0.0, 1.5)
-            + 0.25 * clamp(max(signals.oil_temp - 118.0, 0.0) / 20.0, 0.0, 1.0)
+            + 0.35 * clamp(oil_drop_trend / 6.0, 0, 1.5)
+            + 0.25 * clamp(max(signals.oil_temp - 118.0, 0) / 20.0, 0, 1)
             + 0.30 * float(observation.failures.low_oil)
             + 0.35 * float(events.low_oil_warning)
         )
@@ -83,7 +83,7 @@ class PredictiveMaintenanceModel:
             -3.2
             + 3.4 * voltage_low_norm
             + 2.6 * battery_low_norm
-            + 0.40 * clamp(battery_drop_trend / 8.0, 0.0, 1.2)
+            + 0.40 * clamp(battery_drop_trend / 8.0, 0, 1.2)
             + 0.35 * float(observation.failures.battery_issue)
             + 0.25 * float(events.charging_fault)
         )
@@ -101,7 +101,7 @@ class PredictiveMaintenanceModel:
             -2.6
             + 3.1 * obstacle_norm
             + 1.5 * speed_norm
-            + 0.40 * clamp(speed_trend / 18.0, 0.0, 1.0)
+            + 0.40 * clamp(speed_trend / 18.0, 0, 1)
             + 0.55 * float(observation.failures.sensor_failure)
             + 0.60 * float(observation.failures.brake_failure)
             + traction_penalty
@@ -110,11 +110,11 @@ class PredictiveMaintenanceModel:
         collision_risk_pred = max(collision_risk_pred, collision_risk)
 
         failure_risks = {
-            "engine_overheating": round(clamp(overheat_risk, 0.0, 1.0), 3),
-            "low_oil": round(clamp(low_oil_risk, 0.0, 1.0), 3),
-            "battery_issue": round(clamp(battery_risk, 0.0, 1.0), 3),
-            "brake_failure": round(clamp(brake_risk, 0.0, 1.0), 3),
-            "collision": round(clamp(collision_risk_pred, 0.0, 1.0), 3),
+            "engine_overheating": round(clamp(overheat_risk, 0, 1), 3),
+            "low_oil": round(clamp(low_oil_risk, 0, 1), 3),
+            "battery_issue": round(clamp(battery_risk, 0, 1), 3),
+            "brake_failure": round(clamp(brake_risk, 0, 1), 3),
+            "collision": round(clamp(collision_risk_pred, 0, 1), 3),
         }
 
         primary_failure, primary_risk = max(failure_risks.items(), key=lambda item: item[1])
@@ -124,16 +124,16 @@ class PredictiveMaintenanceModel:
             horizon_km = max(1, int(round(observation.distance_to_obstacle / 5.0)))
         else:
             speed_floor = max(12.0, observation.speed)
-            horizon_km = max(5, int(round((1.0 - primary_risk) * (speed_floor * 1.8))))
+            horizon_km = max(5, int(round((1 - primary_risk) * (speed_floor * 1.8))))
 
         engine_health = 100.0 - (
             52.0 * failure_risks["engine_overheating"]
             + 22.0 * failure_risks["low_oil"]
-            + 0.10 * max(observation.engine_temp - 95.0, 0.0)
+            + 0.10 * max(observation.engine_temp - 95.0, 0)
         )
         battery_health = 100.0 - (
             58.0 * failure_risks["battery_issue"]
-            + 0.55 * max(12.3 - signals.battery_voltage, 0.0) * 20.0
+            + 0.55 * max(12.3 - signals.battery_voltage, 0) * 20.0
         )
         safety_health = 100.0 - (
             65.0 * failure_risks["collision"]
@@ -145,10 +145,10 @@ class PredictiveMaintenanceModel:
             + 22.0 * failure_risks["engine_overheating"]
         )
 
-        engine_health = int(round(clamp(engine_health, 0.0, 100.0)))
-        battery_health = int(round(clamp(battery_health, 0.0, 100.0)))
-        safety_health = int(round(clamp(safety_health, 0.0, 100.0)))
-        maintenance_health = int(round(clamp(maintenance_health, 0.0, 100.0)))
+        engine_health = int(round(clamp(engine_health, 0, 100.0)))
+        battery_health = int(round(clamp(battery_health, 0, 100.0)))
+        safety_health = int(round(clamp(safety_health, 0, 100.0)))
+        maintenance_health = int(round(clamp(maintenance_health, 0, 100.0)))
         overall_health = int(round(
             0.38 * engine_health
             + 0.20 * battery_health

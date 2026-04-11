@@ -16,19 +16,19 @@ def clamp(value: float, low: float, high: float) -> float:
 
 def get_friction_factor(road_condition: str) -> float:
     if road_condition == "dry":
-        return 1.0
+        return 1
     if road_condition == "wet":
         return 0.8
     if road_condition == "rain":
         return 0.65
-    return 1.0
+    return 1
 
 
 def apply_speed_decay(speed: float) -> float:
     """
     Natural passive speed decay per step.
     """
-    return clamp(speed - 1.5, 0.0, 200.0)
+    return clamp(speed - 1.5, 0, 200.0)
 
 
 def apply_action_to_speed(
@@ -71,7 +71,7 @@ def apply_action_to_speed(
     elif action_type == "request_service":
         updated_speed -= 6.0
 
-    return clamp(updated_speed, 0.0, 200.0)
+    return clamp(updated_speed, 0, 200.0)
 
 
 def update_distance_to_obstacle(
@@ -85,7 +85,7 @@ def update_distance_to_obstacle(
     """
     distance_delta = (speed / 12.0) - obstacle_relative_motion
     new_distance = current_distance - distance_delta
-    return clamp(new_distance, 0.0, 200.0)
+    return clamp(new_distance, 0, 200.0)
 
 
 def update_engine_temperature(
@@ -139,9 +139,9 @@ def estimate_collision_risk(
     friction = get_friction_factor(road_condition)
 
     if distance_to_obstacle <= 0:
-        return 1.0
+        return 1
 
-    base = (speed / max(distance_to_obstacle, 1.0)) * 0.12
+    base = (speed / max(distance_to_obstacle, 1)) * 0.12
 
     if road_condition == "wet":
         base += 0.10
@@ -151,6 +151,6 @@ def estimate_collision_risk(
     if brake_failure:
         base += 0.22
 
-    base += (1.0 - friction) * 0.1
+    base += (1 - friction) * 0.1
 
-    return clamp(base, 0.0, 1.0)
+    return clamp(base, 0, 1)

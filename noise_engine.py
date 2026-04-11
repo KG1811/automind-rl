@@ -18,7 +18,7 @@ def add_sensor_noise(
     low: float,
     high: float,
 ) -> float:
-    noisy = value + rng.gauss(0.0, std_dev)
+    noisy = value + rng.gauss(0, std_dev)
     return clamp(noisy, low, high)
 
 
@@ -31,5 +31,5 @@ def maybe_corrupt_distance(
     If sensor failure is active, distance reading becomes less reliable.
     """
     if sensor_failure:
-        return clamp(value + rng.gauss(0.0, 6.0), 0.0, 200.0)
-    return clamp(value + rng.gauss(0.0, 1.5), 0.0, 200.0)
+        return clamp(value + rng.gauss(0, 6.0), 0, 200.0)
+    return clamp(value + rng.gauss(0, 1.5), 0, 200.0)
