@@ -78,19 +78,19 @@ def grade_fault_diagnosis(
     0.05 = wrong / no diagnose action
     """
     if action is None or action.action_type != "diagnose":
-        return MIN_TASK_SCORE  # 0.05
+        return strict_task_score(MIN_TASK_SCORE)  # 0.05
 
     predicted = (action.reason or "").strip().lower()
     true_fault = detect_true_fault(observation)
 
     if predicted == true_fault:
-        return MAX_TASK_SCORE  # 0.95
+        return strict_task_score(MAX_TASK_SCORE)  # 0.95
 
     # Predicted a real fault label, but not the right one
     if true_fault != "no_fault" and predicted not in ("", "no_fault"):
         return strict_task_score(0.45)  # partial credit
 
-    return MIN_TASK_SCORE  # 0.05
+    return strict_task_score(MIN_TASK_SCORE)  # 0.05
 
 
 # =====================================
@@ -133,7 +133,7 @@ def grade_driving_decision(action: Action, observation: Observation) -> float:
     correct = get_safe_action(observation)
 
     if action_type == correct:
-        return MAX_TASK_SCORE  # 0.95
+        return strict_task_score(MAX_TASK_SCORE)  # 0.95
 
     if correct == "brake" and action_type == "stop":
         return strict_task_score(0.72)
@@ -149,9 +149,9 @@ def grade_driving_decision(action: Action, observation: Observation) -> float:
     if observation.distance_to_obstacle < 20 and action_type in (
         "continue", "accelerate"
     ):
-        return MIN_TASK_SCORE
+        return strict_task_score(MIN_TASK_SCORE)
 
-    return MIN_TASK_SCORE  # 0.05
+    return strict_task_score(MIN_TASK_SCORE)  # 0.05
 
 
 # =====================================
@@ -238,11 +238,11 @@ def evaluate_task(
 ) -> float:
     """Always returns float strictly within (0.05, 0.95)."""
     if task_name == "fault_diagnosis":
-        return grade_fault_diagnosis(action, observation)
+        return strict_task_score(grade_fault_diagnosis(action, observation))
 
     if task_name == "driving_decision":
         if action is None:
-            return MIN_TASK_SCORE
+            return strict_task_score(MIN_TASK_SCORE)
         score = grade_driving_decision(action, observation)
         if info and info.get("outcome") == "failure_unsafe_decision":
             score = min(score, strict_task_score(0.44))
@@ -250,7 +250,7 @@ def evaluate_task(
 
     if task_name == "autonomous_control":
         if metrics is None:
-            return MIN_TASK_SCORE
-        return grade_autonomous_control(metrics, info=info, action=action)
+            return strict_task_score(MIN_TASK_SCORE)
+        return strict_task_score(grade_autonomous_control(metrics, info=info, action=action))
 
     raise ValueError(f"Unknown task: {task_name}")
