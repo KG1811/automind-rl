@@ -123,21 +123,21 @@ class Action(BaseModel):
 
 
 class Metrics(BaseModel):
-    safety_score: float = Field(..., ge=0.0, le=1.0)
-    efficiency_score: float = Field(..., ge=0.0, le=1.0)
-    diagnosis_score: float = Field(..., ge=0.0, le=1.0)
-    sequence_score: float = Field(..., ge=0.0, le=1.0)
+    safety_score: float = Field(..., gt=0, lt=1)
+    efficiency_score: float = Field(..., gt=0, lt=1)
+    diagnosis_score: float = Field(..., gt=0, lt=1)
+    sequence_score: float = Field(..., gt=0, lt=1)
 
 
 class RewardBreakdown(BaseModel):
-    total: float = Field(..., ge=-1.0, le=1.0)
-    safety_component: float = Field(..., ge=0.0, le=1.0)
-    efficiency_component: float = Field(..., ge=0.0, le=1.0)
-    diagnosis_component: float = Field(..., ge=0.0, le=1.0)
-    service_component: float = Field(..., ge=0.0, le=1.0)
-    health_component: float = Field(..., ge=0.0, le=1.0)
-    sequence_component: float = Field(..., ge=0.0, le=1.0)
-    penalty_component: float = Field(..., ge=-1.0, le=0.0)
+    total: float = Field(..., gt=-1, lt=1)
+    safety_component: float = Field(..., gt=0, lt=1)
+    efficiency_component: float = Field(..., gt=0, lt=1)
+    diagnosis_component: float = Field(..., gt=0, lt=1)
+    service_component: float = Field(..., gt=0, lt=1)
+    health_component: float = Field(..., gt=0, lt=1)
+    sequence_component: float = Field(..., gt=0, lt=1)
+    penalty_component: float = Field(..., gt=-1, lt=0)
 
 
 class StepResult(BaseModel):

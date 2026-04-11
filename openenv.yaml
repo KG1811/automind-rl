@@ -38,8 +38,8 @@ action_space:
         - cancel_service
     value:
       type: number
-      minimum: 0.0
-      maximum: 1.0
+      exclusiveMinimum: 0
+      exclusiveMaximum: 1
     reason:
       type: string
 

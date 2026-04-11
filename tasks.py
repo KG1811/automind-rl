@@ -195,10 +195,10 @@ def grade_autonomous_control(
             for alert in ["ENGINE OVERHEATING", "BRAKE FAILURE", "BATTERY ISSUE", "LOW OIL"]
         )
 
-        score += 0.08 * float(reward_breakdown.get("service_component", 0.0))
-        score += 0.10 * float(reward_breakdown.get("health_component", 0.0))
-        score += 0.05 * float(reward_breakdown.get("safety_component", 0.0))
-        score += 0.03 * float(reward_breakdown.get("sequence_component", 0.0))
+        score += 0.08 * float(reward_breakdown.get("service_component", 0.01))
+        score += 0.10 * float(reward_breakdown.get("health_component", 0.01))
+        score += 0.05 * float(reward_breakdown.get("safety_component", 0.01))
+        score += 0.03 * float(reward_breakdown.get("sequence_component", 0.01))
 
         if outcome == "success_safe_stop":
             score += 0.12

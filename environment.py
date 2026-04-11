@@ -61,21 +61,21 @@ class AutoMindEnv:
         self.current_fault_phase = self.vehicle_profile["fault_profile"]
         self.current_scenario: dict = {}
         self.last_reward_breakdown = RewardBreakdown(
-            total=0.0,
-            safety_component=1.0,
-            efficiency_component=1.0,
-            diagnosis_component=0.5,
-            service_component=0.0,
-            health_component=1.0,
-            sequence_component=0.0,
-            penalty_component=0.0,
+            total=strict_task_score(0.0),
+            safety_component=strict_task_score(1.0),
+            efficiency_component=strict_task_score(1.0),
+            diagnosis_component=strict_task_score(0.5),
+            service_component=strict_task_score(0.0),
+            health_component=strict_task_score(1.0),
+            sequence_component=strict_task_score(0.0),
+            penalty_component=-0.01,
         )
 
         self.last_metrics = Metrics(
-            safety_score=1.0,
-            efficiency_score=1.0,
-            diagnosis_score=0.5,
-            sequence_score=0.0,
+            safety_score=strict_task_score(1.0),
+            efficiency_score=strict_task_score(1.0),
+            diagnosis_score=strict_task_score(0.5),
+            sequence_score=strict_task_score(0.0),
         )
         self.last_reward = 0.0
         self.last_done = False
@@ -906,14 +906,14 @@ class AutoMindEnv:
         self.last_done = False
         self.last_reward = 0.0
         self.last_reward_breakdown = RewardBreakdown(
-            total=0.0,
-            safety_component=1.0,
-            efficiency_component=1.0,
-            diagnosis_component=0.5,
-            service_component=0.0,
-            health_component=1.0,
-            sequence_component=0.0,
-            penalty_component=0.0,
+            total=strict_task_score(0.0),
+            safety_component=strict_task_score(1.0),
+            efficiency_component=strict_task_score(1.0),
+            diagnosis_component=strict_task_score(0.5),
+            service_component=strict_task_score(0.0),
+            health_component=strict_task_score(1.0),
+            sequence_component=strict_task_score(0.0),
+            penalty_component=-0.01,
         )
         self.last_info = {
             "outcome": "in_progress",
@@ -1192,13 +1192,13 @@ class AutoMindEnv:
         if is_collision:
             self.last_reward_breakdown = RewardBreakdown(
                 total=strict_task_score(0.0),
-                safety_component=0.0,
-                efficiency_component=0.0,
-                diagnosis_component=0.0,
-                service_component=0.0,
-                health_component=0.0,
-                sequence_component=min(1.0, self.episode_state.step_count / max(1.0, self.max_steps)),
-                penalty_component=-1.0,
+                safety_component=strict_task_score(0.0),
+                efficiency_component=strict_task_score(0.0),
+                diagnosis_component=strict_task_score(0.0),
+                service_component=strict_task_score(0.0),
+                health_component=strict_task_score(0.0),
+                sequence_component=strict_task_score(self.episode_state.step_count / max(1.0, self.max_steps)),
+                penalty_component=-0.99,
             )
             return strict_task_score(0.0)
 
@@ -1245,14 +1245,14 @@ class AutoMindEnv:
         total = strict_task_score(total)
 
         self.last_reward_breakdown = RewardBreakdown(
-            total=total,
-            safety_component=round(safety, 3),
-            efficiency_component=round(efficiency, 3),
-            diagnosis_component=round(diagnosis, 3),
-            service_component=round(service_component, 3),
-            health_component=round(health_component, 3),
-            sequence_component=round(sequence, 3),
-            penalty_component=round(max(-1.0, min(0.0, penalty)), 3),
+            total=strict_task_score(total),
+            safety_component=strict_task_score(safety),
+            efficiency_component=strict_task_score(efficiency),
+            diagnosis_component=strict_task_score(diagnosis),
+            service_component=strict_task_score(service_component),
+            health_component=strict_task_score(health_component),
+            sequence_component=strict_task_score(sequence),
+            penalty_component=round(max(-0.99, min(-0.01, penalty)), 3) if penalty < 0 else -0.01,
         )
         return total
 
@@ -1394,14 +1394,14 @@ class AutoMindEnv:
             decision_score = grade_driving_decision(action, pre_action_observation)
             decision_reward = 0.75 * decision_score + 0.25 * self.last_metrics.safety_score
             self.last_reward_breakdown = RewardBreakdown(
-                total=round(decision_reward, 3),
-                safety_component=self.last_metrics.safety_score,
-                efficiency_component=self.last_metrics.efficiency_score,
-                diagnosis_component=round(decision_score, 3),
-                service_component=0.0,
-                health_component=max(0.0, min(1.0, self.last_info.get("health_score", 0) / 100.0)),
-                sequence_component=1.0,
-                penalty_component=0.0,
+                total=strict_task_score(decision_reward),
+                safety_component=strict_task_score(self.last_metrics.safety_score),
+                efficiency_component=strict_task_score(self.last_metrics.efficiency_score),
+                diagnosis_component=strict_task_score(decision_score),
+                service_component=strict_task_score(0.0),
+                health_component=strict_task_score(self.last_info.get("health_score", 0) / 100.0),
+                sequence_component=strict_task_score(1.0),
+                penalty_component=-0.01,
             )
             self.last_info["reward_breakdown"] = self.last_reward_breakdown.model_dump()
             return self._finish_task_episode(

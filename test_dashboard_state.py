@@ -1,4 +1,4 @@
-﻿import json
+import json
 import os
 from typing import Optional
 
@@ -183,7 +183,7 @@ class EnvClient:
 def run_episode(client: EnvClient, llm_client: OpenAI, task_name: str, difficulty: str) -> float:
     rewards: list[float] = []
     steps_taken = 0
-    score = 0.0
+    score = 0.01
     success = False
 
     log_start(task=task_name, env=client.mode(), model=MODEL_NAME)
@@ -193,7 +193,7 @@ def run_episode(client: EnvClient, llm_client: OpenAI, task_name: str, difficult
         last_action: Optional[Action] = None
         last_metrics: Optional[Metrics] = None
         last_info: Optional[dict] = None
-        last_reward = 0.0
+        last_reward = 0.01
 
         for step_idx in range(1, MAX_STEPS + 1):
             observation_obj = Observation(**obs)
@@ -237,9 +237,9 @@ def run_episode(client: EnvClient, llm_client: OpenAI, task_name: str, difficult
                 info=last_info,
             )
         else:
-            score = max(0.0, min(1.0, last_reward))
+            score = max(0.01, min(0.99, last_reward))
 
-        score = min(max(score, 0.0), 1.0)
+        score = min(max(score, 0.01), 0.99)
         success = score >= 0.7
         return score
     finally:

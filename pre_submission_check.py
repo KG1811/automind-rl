@@ -22,7 +22,7 @@ TASKS = [
 
 
 def assert_score_range(value: float, label: str) -> None:
-    assert 0.0 <= value <= 1.0, f"{label} out of range: {value}"
+    assert 0 < value < 1, f"{label} out of range: {value}"
 
 
 def run_checks() -> None:

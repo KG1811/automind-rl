@@ -187,7 +187,7 @@ class EnvClient:
 def run_episode(client: EnvClient, llm_client: OpenAI, task_name: str, difficulty: str) -> float:
     rewards: list[float] = []
     steps_taken = 0
-    score = 0.0
+    score = 0.01
     success = False
 
     log_start(task=task_name, env=client.mode(), model=MODEL_NAME)
@@ -197,7 +197,7 @@ def run_episode(client: EnvClient, llm_client: OpenAI, task_name: str, difficult
         last_action: Optional[Action] = None
         last_metrics: Optional[Metrics] = None
         last_info: Optional[dict] = None
-        last_reward = 0.0
+        last_reward = 0.01
 
         for step_idx in range(1, MAX_STEPS + 1):
             observation_obj = Observation(**obs)
