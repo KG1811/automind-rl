@@ -64,10 +64,10 @@ def log_step(step: int, action: str, reward: float, done: bool, error: Optional[
     )
 
 
-def log_end(success: bool, steps: int, rewards: list[float]) -> None:
+def log_end(success: bool, steps: int, score: float, rewards: list[float]) -> None:
     reward_values = ",".join(format_reward(reward) for reward in rewards)
     print(
-        f"[END] success={format_bool(success)} steps={steps} rewards={reward_values}",
+        f"[END] success={format_bool(success)} steps={steps} score={format_reward(score)} rewards={reward_values}",
         flush=True,
     )
 
@@ -242,7 +242,7 @@ def run_episode(client: EnvClient, llm_client: OpenAI, task_name: str, difficult
         )
         return MIN_TASK_SCORE
     finally:
-        log_end(success=success, steps=steps_taken, rewards=rewards)
+        log_end(success=success, steps=steps_taken, score=score, rewards=rewards)
 
 
 if __name__ == "__main__":
