@@ -52,22 +52,37 @@ def format_action(action: Action) -> str:
 
 
 def log_start(task: str, env: str, model: str) -> None:
-    print(f"[START] task={task} env={env} model={model}", flush=True)
-
+    print("[START]", flush=True)
+    print(json.dumps({"task": task, "env": env, "model": model}), flush=True)
 
 def log_step(step: int, action: str, reward: float, done: bool, error: Optional[str]) -> None:
-    error_value = "null" if error is None else error.replace("\n", " ")
+    print("[STEP]", flush=True)
+    action_dict = {}
+    try:
+        action_dict = json.loads(action)
+    except json.JSONDecodeError:
+        pass
     print(
-        f"[STEP] step={step} action={action} reward={format_reward(reward)} "
-        f"done={format_bool(done)} error={error_value}",
+        json.dumps({
+            "step": step,
+            "action": action_dict,
+            "reward": round(reward, 3),
+            "done": done,
+            "error": error
+        }),
         flush=True,
     )
 
-
-def log_end(success: bool, steps: int, score: float, rewards: list[float]) -> None:
-    reward_values = ",".join(format_reward(reward) for reward in rewards)
+def log_end(success: bool, steps: int, score: float, rewards: list[float], task_name: str) -> None:
+    print("[END]", flush=True)
     print(
-        f"[END] success={format_bool(success)} steps={steps} score={format_reward(score)} rewards={reward_values}",
+        json.dumps({
+            "task": task_name,
+            "success": bool(success),
+            "steps": int(steps),
+            "score": round(score, 3),
+            "rewards": [round(r, 3) for r in rewards]
+        }),
         flush=True,
     )
 
@@ -242,7 +257,7 @@ def run_episode(client: EnvClient, llm_client: OpenAI, task_name: str, difficult
         )
         return MIN_TASK_SCORE
     finally:
-        log_end(success=success, steps=steps_taken, score=score, rewards=rewards)
+        log_end(success=success, steps=steps_taken, score=score, rewards=rewards, task_name=task_name)
 
 
 if __name__ == "__main__":
