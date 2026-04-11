@@ -1,6 +1,6 @@
 ﻿
 ---
-Title: Automind RL
+title: Automind RL
 emoji: "🚑"
 colorFrom: blue
 colorTo: purple
@@ -59,7 +59,7 @@ C:\Users\Khushi\AppData\Roaming\Python\Python313\Scripts\openenv.exe validate
 Action fields:
 
 - `action_type: str`
-- `value: float` strictly within `(0.0, 1.0]`
+- `value: float` strictly within `(0.0, 1.0)`
 - `reason: str`
 
 Supported actions:
@@ -139,7 +139,7 @@ Expected behavior:
 Deterministic grader:
 
 - combines safety, diagnosis, efficiency, service handling, outcome quality, and sequence quality
-- returns a final score strictly within (0, 1)
+- returns a deterministic final score strictly within `(0, 1)`
 
 
 ## Reward Function
@@ -176,7 +176,7 @@ Environment variables:
 - optional: `ENV_BASE_URL`
 - optional: `LOCAL_IMAGE_NAME`
 
-When no token is available, the script safely falls back to the deterministic rule-based agent so the benchmark remains reproducible.
+The script reads `HF_TOKEN` for OpenAI-compatible inference and uses the required Meta submission environment variables.
 
 Current baseline scores:
 

@@ -2,8 +2,8 @@ name: automind-openenv
 version: "1.0.0"
 
 description: >
-  AutoMind OpenEnv is a fleet maintenance and roadside decision benchmark.
-  It simulates telemetry-driven diagnosis, safe maneuver selection,
+  AutoMind OpenEnv is a predictive fleet maintenance and roadside decision benchmark.
+  It simulates telemetry-driven early failure detection, safe maneuver selection,
   service escalation, operator override, reward shaping, deterministic
   graders, and a live HTTP interface for evaluating real-world agent behavior.
 

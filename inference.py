@@ -34,48 +34,40 @@ def strict_score(score: float) -> float:
     return round(max(MIN_TASK_SCORE, min(MAX_TASK_SCORE, score)), 3)
 
 
+def format_bool(value: bool) -> str:
+    return "true" if value else "false"
+
+
+def format_reward(value: float) -> str:
+    return f"{strict_score(value):.2f}"
+
+
+def format_action(action: Action) -> str:
+    payload = {
+        "action_type": action.action_type,
+        "value": round(float(action.value), 3),
+        "reason": action.reason,
+    }
+    return json.dumps(payload, separators=(",", ":"))
+
+
 def log_start(task: str, env: str, model: str) -> None:
-    print("[START]", flush=True)
+    print(f"[START] task={task} env={env} model={model}", flush=True)
+
+
+def log_step(step: int, action: str, reward: float, done: bool, error: Optional[str]) -> None:
+    error_value = "null" if error is None else error.replace("\n", " ")
     print(
-        json.dumps(
-            {
-                "task": task,
-                "env": env,
-                "model": model,
-            }
-        ),
+        f"[STEP] step={step} action={action} reward={format_reward(reward)} "
+        f"done={format_bool(done)} error={error_value}",
         flush=True,
     )
 
 
-def log_step(step: int, action: dict, reward: float, done: bool, error: Optional[str]) -> None:
-    print("[STEP]", flush=True)
+def log_end(success: bool, steps: int, rewards: list[float]) -> None:
+    reward_values = ",".join(format_reward(reward) for reward in rewards)
     print(
-        json.dumps(
-            {
-                "step": step,
-                "action": action,
-                "reward": reward,
-                "done": done,
-                "error": error,
-            }
-        ),
-        flush=True,
-    )
-
-
-def log_end(success: bool, steps: int, score: float, rewards: list[float], task: str) -> None:
-    print("[END]", flush=True)
-    print(
-        json.dumps(
-            {
-                "task": task,
-                "success": success,
-                "steps": steps,
-                "score": score,
-                "rewards": rewards,
-            }
-        ),
+        f"[END] success={format_bool(success)} steps={steps} rewards={reward_values}",
         flush=True,
     )
 
@@ -103,7 +95,7 @@ You are controlling an automotive agent for the task "{task_name}".
 Return JSON only in this format:
 {{
   "action_type": "string",
-  "value": 0,
+  "value": 0.5,
   "reason": "short reason"
 }}
 
@@ -114,27 +106,20 @@ Observation:
 """.strip()
 
 
-def get_model_action(client: OpenAI, observation: dict, task_name: str) -> Optional[Action]:
-    if not HF_TOKEN:
-        return None
-
-    try:
-        completion = client.chat.completions.create(
-            model=MODEL_NAME,
-            messages=[{"role": "user", "content": build_prompt(observation, task_name)}],
-            temperature=TEMPERATURE,
-            max_tokens=120,
-        )
-        text = completion.choices[0].message.content or ""
-        payload = json.loads(text)
-        return Action(
-            action_type=str(payload["action_type"]).strip(),
-            value=float(payload.get("value", 1)),
-            reason=str(payload.get("reason", "")).strip(),
-        )
-    except Exception as exc:
-        print(f"[DEBUG] Model request failed: {exc}", flush=True)
-        return None
+def get_model_action(client: OpenAI, observation: dict, task_name: str) -> Action:
+    completion = client.chat.completions.create(
+        model=MODEL_NAME,
+        messages=[{"role": "user", "content": build_prompt(observation, task_name)}],
+        temperature=TEMPERATURE,
+        max_tokens=120,
+    )
+    text = completion.choices[0].message.content or ""
+    payload = json.loads(text)
+    return Action(
+        action_type=str(payload["action_type"]).strip(),
+        value=float(payload.get("value", 0.5)),
+        reason=str(payload.get("reason", "")).strip(),
+    )
 
 
 class EnvClient:
@@ -188,7 +173,7 @@ def run_episode(client: EnvClient, llm_client: OpenAI, task_name: str, difficult
     rewards: list[float] = []
     steps_taken = 0
     step_idx = 0
-    score = 1e-2
+    score = MIN_TASK_SCORE
     success = False
 
     log_start(task=task_name, env=client.mode(), model=MODEL_NAME)
@@ -198,22 +183,22 @@ def run_episode(client: EnvClient, llm_client: OpenAI, task_name: str, difficult
         last_action: Optional[Action] = None
         last_metrics: Optional[Metrics] = None
         last_info: Optional[dict] = None
-        last_reward = 1e-2
+        last_reward = MIN_TASK_SCORE
 
         for step_idx in range(1, MAX_STEPS + 1):
             observation_obj = Observation(**obs)
-            action = get_model_action(llm_client, obs, task_name=task_name) or agent_step(
-                observation_obj,
-                task_name=task_name,
-            )
+            try:
+                action = get_model_action(llm_client, obs, task_name=task_name)
+            except Exception:
+                action = agent_step(observation_obj, task_name=task_name)
 
             result = client.step(action)
             obs = result["observation"]
-            reward = float(result["reward"])
+            reward = strict_score(float(result["reward"]))
             done = bool(result["done"])
             metrics = result["metrics"]
             info = result["info"]
-            error = None
+            error = info.get("last_action_error") if isinstance(info, dict) else None
 
             rewards.append(reward)
             steps_taken = step_idx
@@ -224,7 +209,7 @@ def run_episode(client: EnvClient, llm_client: OpenAI, task_name: str, difficult
 
             log_step(
                 step=step_idx,
-                action=action.model_dump(),
+                action=format_action(action),
                 reward=reward,
                 done=done,
                 error=error,
@@ -248,39 +233,31 @@ def run_episode(client: EnvClient, llm_client: OpenAI, task_name: str, difficult
         success = score >= 0.7
         return score
     except Exception as exc:
-        print(f"[ERROR] Exception in run_episode: {exc}")
         log_step(
-            step=step_idx,
-            action={},
-            reward=1e-2,
+            step=max(step_idx, 1),
+            action="{}",
+            reward=MIN_TASK_SCORE,
             done=True,
             error=str(exc),
         )
-        return 1e-2
+        return MIN_TASK_SCORE
     finally:
-        log_end(
-            success=success,
-            steps=steps_taken,
-            score=score,
-            rewards=rewards,
-            task=task_name,
-        )
+        log_end(success=success, steps=steps_taken, rewards=rewards)
 
 
 if __name__ == "__main__":
+    if HF_TOKEN is None:
+        raise ValueError("HF_TOKEN environment variable is required")
+
+    llm_client = OpenAI(base_url=API_BASE_URL, api_key=HF_TOKEN)
+    client = EnvClient()
     try:
-        api_key = HF_TOKEN or "missing-hf-token"
-        llm_client = OpenAI(base_url=API_BASE_URL, api_key=api_key)
-        client = EnvClient()
-        try:
-            for task_name, difficulty in TASK_RUNS:
-                run_episode(
-                    client=client,
-                    llm_client=llm_client,
-                    task_name=task_name,
-                    difficulty=difficulty,
-                )
-        finally:
-            client.close()
-    except Exception as exc:
-        print(f"[FATAL_ERROR] {exc}")
+        for task_name, difficulty in TASK_RUNS:
+            run_episode(
+                client=client,
+                llm_client=llm_client,
+                task_name=task_name,
+                difficulty=difficulty,
+            )
+    finally:
+        client.close()
