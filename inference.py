@@ -64,10 +64,10 @@ def log_step(step: int, action: str, reward: float, done: bool, error: Optional[
     )
 
 
-def log_end(success: bool, steps: int, score: float, rewards: list[float]) -> None:
+def log_end(success: bool, steps: int, rewards: list[float]) -> None:
     reward_values = ",".join(format_reward(reward) for reward in rewards)
     print(
-        f"[END] success={format_bool(success)} steps={steps} score={format_reward(score)} rewards={reward_values}",
+        f"[END] success={format_bool(success)} steps={steps} rewards={reward_values}",
         flush=True,
     )
 
@@ -242,13 +242,15 @@ def run_episode(client: EnvClient, llm_client: OpenAI, task_name: str, difficult
         )
         return MIN_TASK_SCORE
     finally:
-        log_end(success=success, steps=steps_taken, score=score, rewards=rewards)
+        log_end(success=success, steps=steps_taken, rewards=rewards)
 
 
 if __name__ == "__main__":
+    if HF_TOKEN is None:
+        raise ValueError("HF_TOKEN environment variable is required")
+
     try:
-        api_key = HF_TOKEN or "missing-hf-token"
-        llm_client = OpenAI(base_url=API_BASE_URL, api_key=api_key)
+        llm_client = OpenAI(base_url=API_BASE_URL, api_key=HF_TOKEN)
         client = EnvClient()
         try:
             for task_name, difficulty in TASK_RUNS:
