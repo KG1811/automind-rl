@@ -187,6 +187,7 @@ class EnvClient:
 def run_episode(client: EnvClient, llm_client: OpenAI, task_name: str, difficulty: str) -> float:
     rewards: list[float] = []
     steps_taken = 0
+    step_idx = 0
     score = 1e-2
     success = False
 
@@ -246,6 +247,16 @@ def run_episode(client: EnvClient, llm_client: OpenAI, task_name: str, difficult
         score = strict_score(score)
         success = score >= 0.7
         return score
+    except Exception as exc:
+        print(f"[ERROR] Exception in run_episode: {exc}")
+        log_step(
+            step=step_idx,
+            action={},
+            reward=1e-2,
+            done=True,
+            error=str(exc),
+        )
+        return 1e-2
     finally:
         log_end(
             success=success,
@@ -257,16 +268,19 @@ def run_episode(client: EnvClient, llm_client: OpenAI, task_name: str, difficult
 
 
 if __name__ == "__main__":
-    api_key = HF_TOKEN or "missing-hf-token"
-    llm_client = OpenAI(base_url=API_BASE_URL, api_key=api_key)
-    client = EnvClient()
     try:
-        for task_name, difficulty in TASK_RUNS:
-            run_episode(
-                client=client,
-                llm_client=llm_client,
-                task_name=task_name,
-                difficulty=difficulty,
-            )
-    finally:
-        client.close()
+        api_key = HF_TOKEN or "missing-hf-token"
+        llm_client = OpenAI(base_url=API_BASE_URL, api_key=api_key)
+        client = EnvClient()
+        try:
+            for task_name, difficulty in TASK_RUNS:
+                run_episode(
+                    client=client,
+                    llm_client=llm_client,
+                    task_name=task_name,
+                    difficulty=difficulty,
+                )
+        finally:
+            client.close()
+    except Exception as exc:
+        print(f"[FATAL_ERROR] {exc}")
