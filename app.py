@@ -10,6 +10,19 @@ app = FastAPI(title="AutoMind OpenEnv Fleet Benchmark", version="1.0.0")
 envs: dict[str, AutoMindEnv] = {}
 envs_lock = threading.Lock()
 
+def _clamp_score_fields(value):
+    if isinstance(value, dict):
+        clamped = {}
+        for key, item in value.items():
+            if isinstance(item, (int, float)) and "score" in key.lower():
+                clamped[key] = safe_score(item)
+            else:
+                clamped[key] = _clamp_score_fields(item)
+        return clamped
+    if isinstance(value, list):
+        return [_clamp_score_fields(item) for item in value]
+    return value
+
 def stable_seed(car_id: str) -> int:
     digest = hashlib.sha256(car_id.encode("utf-8")).hexdigest()
     return int(digest[:8], 16)
@@ -94,7 +107,7 @@ def step(action: Action, car_id: str = "default"):
             if "penalty_component" in breakdown:
                 breakdown["penalty_component"] = max(-0.95, min(-0.05, float(breakdown["penalty_component"])))
 
-    return result.model_dump()
+    return _clamp_score_fields(result.model_dump())
 
 @app.get("/state")
 def state(car_id: str = "default"):

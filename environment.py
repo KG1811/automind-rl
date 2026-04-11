@@ -1392,21 +1392,21 @@ class AutoMindEnv:
 
         if self.current_task == "driving_decision":
             decision_score = grade_driving_decision(action, pre_action_observation)
-        decision_reward = self._safe_score(
-    0.75 * decision_score + 0.25 * self.last_metrics.safety_score
-)
-        self.last_reward_breakdown = RewardBreakdown(
+            decision_reward = self._safe_score(
+                0.75 * decision_score + 0.25 * self.last_metrics.safety_score
+            )
+            self.last_reward_breakdown = RewardBreakdown(
                 total=strict_task_score(decision_reward),
                 safety_component=strict_task_score(self.last_metrics.safety_score),
                 efficiency_component=strict_task_score(self.last_metrics.efficiency_score),
                 diagnosis_component=strict_task_score(decision_score),
-                service_component=strict_task_score(1e-2),
+                service_component=strict_task_score(0.05),
                 health_component=strict_task_score(self.last_info.get("health_score", 0) / 100.0),
-                sequence_component=strict_task_score(0.99),
-                penalty_component=-1e-2,
+                sequence_component=strict_task_score(0.95),
+                penalty_component=-0.05,
             )
-        self.last_info["reward_breakdown"] = self.last_reward_breakdown.model_dump()
-        return self._finish_task_episode(
+            self.last_info["reward_breakdown"] = self.last_reward_breakdown.model_dump()
+            return self._finish_task_episode(
                 reward=decision_reward,
                 info_updates={
                     "outcome": (
@@ -1422,20 +1422,20 @@ class AutoMindEnv:
                     safety_score=self._strict_metric_score(self.last_metrics.safety_score),
                     efficiency_score=self._strict_metric_score(self.last_metrics.efficiency_score),
                     diagnosis_score=self._strict_metric_score(decision_score),
-                    sequence_score=self._strict_metric_score(0.99),
+                    sequence_score=self._strict_metric_score(0.95),
                 ),
             )
 
-def _safe_score(self, x: float) -> float:
-    return max(0.05, min(0.95, float(x)))
-    safe_reward = self._safe_score(self.last_reward)
-    return StepResult(
+        return StepResult(
             observation=self.current_observation,
-            reward=safe_reward,
+            reward=self.last_reward,
             done=self.last_done,
             info=self.last_info,
             metrics=self.last_metrics,
         )
+
+    def _safe_score(self, x: float) -> float:
+        return max(0.05, min(0.95, float(x)))
 
     def get_full_state(self) -> dict:
         if self.current_observation is None:
