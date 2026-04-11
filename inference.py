@@ -1,7 +1,8 @@
 """
 AutoMind OpenEnv — Baseline Inference Script
-Strict [START] / [STEP] / [END] stdout format required by Meta evaluator.
-Uses OpenAI client. Reads API_BASE_URL, MODEL_NAME, HF_TOKEN from env vars.
+Reads: API_BASE_URL, MODEL_NAME, HF_TOKEN from environment variables.
+Uses OpenAI client for all LLM calls.
+Emits [START] / [STEP] / [END] stdout logs per Meta spec.
 """
 
 from __future__ import annotations
@@ -18,39 +19,39 @@ from environment import AutoMindEnv
 from models import Action, Metrics, Observation
 from tasks import evaluate_task
 
-# ── Environment variables ──────────────────────────────────────────────────────
-API_BASE_URL: str = os.getenv("API_BASE_URL", "https://api.openai.com/v1")
-MODEL_NAME: str   = os.getenv("MODEL_NAME", "gpt-4o-mini")
-HF_TOKEN: Optional[str] = os.getenv("HF_TOKEN")
-ENV_BASE_URL: str = os.getenv("ENV_BASE_URL", "http://127.0.0.1:8000")
+# ── Env vars ───────────────────────────────────────────────────────────────────
+API_BASE_URL: str        = os.getenv("API_BASE_URL", "https://api.openai.com/v1")
+MODEL_NAME: str          = os.getenv("MODEL_NAME", "gpt-4o-mini")
+HF_TOKEN: Optional[str]  = os.getenv("HF_TOKEN")
+ENV_BASE_URL: str        = os.getenv("ENV_BASE_URL", "http://127.0.0.1:8000")
 LOCAL_IMAGE_NAME: Optional[str] = os.getenv("LOCAL_IMAGE_NAME")
 
-# ── Run config ─────────────────────────────────────────────────────────────────
-MAX_STEPS: int   = 20
+# ── Config ─────────────────────────────────────────────────────────────────────
+MAX_STEPS:   int   = 20
 TEMPERATURE: float = 0.1
-BENCHMARK: str   = "automind-rl"
+BENCHMARK:   str   = "automind-rl"
 
 TASK_RUNS = [
-    ("fault_diagnosis",   "easy"),
-    ("fault_diagnosis",   "medium"),
-    ("fault_diagnosis",   "hard"),
-    ("driving_decision",  "easy"),
-    ("driving_decision",  "medium"),
-    ("driving_decision",  "hard"),
-    ("autonomous_control","easy"),
-    ("autonomous_control","medium"),
-    ("autonomous_control","hard"),
+    ("fault_diagnosis",    "easy"),
+    ("fault_diagnosis",    "medium"),
+    ("fault_diagnosis",    "hard"),
+    ("driving_decision",   "easy"),
+    ("driving_decision",   "medium"),
+    ("driving_decision",   "hard"),
+    ("autonomous_control", "easy"),
+    ("autonomous_control", "medium"),
+    ("autonomous_control", "hard"),
 ]
 
 
-# ── Score safety ──────────────────────────────────────────────────────────────
+# ── Score safety ───────────────────────────────────────────────────────────────
 
 def safe_score(x: float) -> float:
-    """Guarantee score is strictly within (0, 1)."""
+    """Guarantee score strictly within (0, 1) — never 0.0 or 1.0."""
     return max(0.05, min(0.95, float(x)))
 
 
-# ── Stdout log helpers — EXACT Meta format ────────────────────────────────────
+# ── Log helpers — EXACT Meta format ───────────────────────────────────────────
 
 def _fmt_bool(v: bool) -> str:
     return "true" if v else "false"
@@ -82,21 +83,20 @@ def log_step(
     done: bool,
     error: Optional[str],
 ) -> None:
-    error_val = "null" if error is None else str(error).replace("\n", " ")
+    err = "null" if error is None else str(error).replace("\n", " ")
     print(
         f"[STEP] step={step} action={action} reward={_fmt_reward(reward)} "
-        f"done={_fmt_bool(done)} error={error_val}",
+        f"done={_fmt_bool(done)} error={err}",
         flush=True,
     )
 
 
 def log_end(success: bool, steps: int, score: float, rewards: list[float]) -> None:
     """
-    Meta spec requires: [END] success=... steps=... score=... rewards=...
-    score must be the final episode score (strictly within (0,1)).
+    Meta spec [END] line — MUST include score= field.
+    Format: [END] success=... steps=... score=... rewards=...
     """
-    safe_rewards = [safe_score(r) for r in rewards]
-    reward_str   = ",".join(_fmt_reward(r) for r in safe_rewards)
+    reward_str = ",".join(_fmt_reward(r) for r in rewards)
     print(
         f"[END] success={_fmt_bool(success)} steps={steps} "
         f"score={_fmt_reward(score)} rewards={reward_str}",
@@ -104,68 +104,69 @@ def log_end(success: bool, steps: int, score: float, rewards: list[float]) -> No
     )
 
 
-# ── Prompt builder ────────────────────────────────────────────────────────────
+# ── Prompt ─────────────────────────────────────────────────────────────────────
 
 def build_prompt(observation: dict, task_name: str) -> str:
     if task_name == "fault_diagnosis":
         instruction = (
-            'Use action_type "diagnose". Set "reason" to the predicted fault label. '
-            "Valid labels: engine_overheating, low_oil, battery_issue, no_fault."
+            'Use action_type "diagnose". Set "reason" to the predicted fault.\n'
+            "Valid: engine_overheating | low_oil | battery_issue | no_fault"
         )
     elif task_name == "driving_decision":
         instruction = (
-            "Choose the single safest next action. "
-            "Valid actions: brake, accelerate, turn_left, turn_right, continue, stop."
+            "Pick the single safest action.\n"
+            "Valid: brake | accelerate | turn_left | turn_right | continue | stop"
         )
     else:
         instruction = (
-            "Control the vehicle safely over the full episode. "
-            "Valid actions: brake, accelerate, turn_left, turn_right, continue, stop, "
-            "request_service, reschedule_service, cancel_service."
+            "Control vehicle safely over the episode.\n"
+            "Valid: brake | accelerate | turn_left | turn_right | continue | stop "
+            "| request_service | reschedule_service | cancel_service"
         )
 
     return (
         f'You are an automotive agent for task "{task_name}".\n'
-        f"Return JSON ONLY — no markdown, no explanation:\n"
-        f'{{"action_type":"string","value":0.5,"reason":"short reason"}}\n'
+        f"Reply with JSON ONLY — no markdown, no explanation:\n"
+        f'{{"action_type":"string","value":0.5,"reason":"short reason"}}\n\n'
         f"{instruction}\n\n"
         f"Observation:\n{json.dumps(observation, indent=2)}"
     )
 
 
-# ── LLM action fetch ──────────────────────────────────────────────────────────
+# ── LLM call ───────────────────────────────────────────────────────────────────
 
 def get_model_action(
     client: OpenAI,
-    observation: dict,
+    obs_dict: dict,
     task_name: str,
-    fallback_obs: Observation,
+    obs_obj: Observation,
 ) -> Action:
     try:
         completion = client.chat.completions.create(
             model=MODEL_NAME,
-            messages=[{"role": "user", "content": build_prompt(observation, task_name)}],
+            messages=[{"role": "user", "content": build_prompt(obs_dict, task_name)}],
             temperature=TEMPERATURE,
-            max_tokens=120,
+            max_tokens=150,
         )
-        text = (completion.choices[0].message.content or "").strip()
-        # Strip markdown fences if model adds them
-        if text.startswith("```"):
-            text = text.split("```")[1]
-            if text.startswith("json"):
-                text = text[4:]
-        payload = json.loads(text)
+        raw = (completion.choices[0].message.content or "").strip()
+        # Strip markdown fences if model wraps response
+        if raw.startswith("```"):
+            parts = raw.split("```")
+            raw = parts[1] if len(parts) > 1 else raw
+            if raw.startswith("json"):
+                raw = raw[4:]
+        payload = json.loads(raw.strip())
         return Action(
             action_type=str(payload.get("action_type", "continue")).strip(),
             value=safe_score(float(payload.get("value", 0.5))),
             reason=str(payload.get("reason", "")).strip(),
         )
     except Exception as exc:
-        print(f"[DEBUG] LLM parse failed: {exc}", flush=True)
-        return agent_step(fallback_obs, task_name=task_name)
+        print(f"[DEBUG] LLM failed: {exc}", flush=True)
+        return agent_step(obs_obj, task_name=task_name)
 
 
-# ── Environment HTTP client ───────────────────────────────────────────────────
+# ── Env HTTP client ────────────────────────────────────────────────────────────
 
 class EnvClient:
     def __init__(self) -> None:
@@ -190,7 +191,9 @@ class EnvClient:
             return r.json()["observation"]
         if self.local_env is None:
             self.local_env = AutoMindEnv()
-        return self.local_env.reset(task_name=task_name, difficulty=difficulty).model_dump()
+        return self.local_env.reset(
+            task_name=task_name, difficulty=difficulty
+        ).model_dump()
 
     def step(self, action: Action) -> dict:
         if self.remote_available:
@@ -212,7 +215,7 @@ class EnvClient:
         return "http" if self.remote_available else "local"
 
 
-# ── Episode runner ────────────────────────────────────────────────────────────
+# ── Episode runner ─────────────────────────────────────────────────────────────
 
 def run_episode(
     env_client: EnvClient,
@@ -220,11 +223,11 @@ def run_episode(
     task_name: str,
     difficulty: str,
 ) -> float:
-    rewards: list[float] = []
-    steps_taken = 0
-    step_idx    = 0
-    score       = 0.05
-    success     = False
+    rewards:     list[float]       = []
+    steps_taken: int               = 0
+    step_idx:    int               = 0
+    score:       float             = 0.05
+    success:     bool              = False
 
     log_start(task=task_name, env=env_client.mode(), model=MODEL_NAME)
 
@@ -234,26 +237,25 @@ def run_episode(
         last_action:  Optional[Action]  = None
         last_metrics: Optional[Metrics] = None
         last_info:    Optional[dict]    = None
-        last_reward   = 0.05
+        last_reward:  float             = 0.05
 
         for step_idx in range(1, MAX_STEPS + 1):
             obs_obj = Observation(**obs)
-
-            action = get_model_action(llm_client, obs, task_name, obs_obj)
+            action  = get_model_action(llm_client, obs, task_name, obs_obj)
 
             result  = env_client.step(action)
             obs     = result["observation"]
             reward  = safe_score(float(result["reward"]))
             done    = bool(result["done"])
-            metrics = result.get("metrics", {})
-            info    = result.get("info", {})
-            error   = info.get("last_action_error") if isinstance(info, dict) else None
+            metrics_raw = result.get("metrics") or {}
+            info        = result.get("info") or {}
+            error       = info.get("last_action_error") if isinstance(info, dict) else None
 
             rewards.append(reward)
             steps_taken  = step_idx
             last_reward  = reward
             last_action  = action
-            last_metrics = Metrics(**metrics) if metrics else None
+            last_metrics = Metrics(**metrics_raw) if metrics_raw else None
             last_info    = info
 
             log_step(
@@ -267,7 +269,7 @@ def run_episode(
             if done:
                 break
 
-        # Final score via task grader
+        # Final score via grader
         if last_action is not None and last_metrics is not None:
             score = safe_score(
                 evaluate_task(
@@ -304,7 +306,7 @@ def run_episode(
     return score
 
 
-# ── Entry point ───────────────────────────────────────────────────────────────
+# ── Entry point ────────────────────────────────────────────────────────────────
 
 if __name__ == "__main__":
     if not HF_TOKEN:
