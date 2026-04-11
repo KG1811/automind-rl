@@ -157,6 +157,7 @@ Reward components include:
 - penalties for dangerous actions such as accelerating into severe risk
 
 This gives useful learning signal before the final episode ends.
+All task-facing scores and rewards are clamped to remain strictly within `(0, 1)` before being returned by the API.
 
 ## Difficulty Progression
 

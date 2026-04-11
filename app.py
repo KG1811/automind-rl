@@ -126,7 +126,7 @@ def state(car_id: str = "default"):
     env = get_env(car_id)
     if not env.is_initialized():
         env.reset(task_name="autonomous_control", difficulty="medium")
-    return env.get_full_state()
+    return _clamp_all_scores(env.get_full_state())
 
 
 @app.get("/tasks")
