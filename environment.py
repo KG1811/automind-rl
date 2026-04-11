@@ -94,6 +94,7 @@ class AutoMindEnv:
             "reward_breakdown": self.last_reward_breakdown.model_dump(),
             "scenario": {},
             "task_score": strict_task_score(0.0),
+            "score": strict_task_score(0.0),
         }
 
     def _strict_metric_score(self, value: float) -> float:
@@ -929,6 +930,7 @@ class AutoMindEnv:
             "reward_breakdown": self.last_reward_breakdown.model_dump(),
             "scenario": self.current_scenario,
             "task_score": strict_task_score(0.0),
+            "score": strict_task_score(0.0),
         }
 
         self.last_metrics = self._compute_metrics(
@@ -1150,6 +1152,7 @@ class AutoMindEnv:
             "dashboard": dashboard,
             "ml_predictions": health_snapshot["ml_predictions"],
             "task_score": self.last_info.get("task_score", strict_task_score(0.0)),
+            "score": self.last_info.get("task_score", strict_task_score(0.0)),
         }
 
     def _finish_task_episode(
@@ -1168,6 +1171,7 @@ class AutoMindEnv:
             "override_count": self.override_count,
             "step_count": self.episode_state.step_count,
             "task_score": strict_task_score(reward),
+            "score": strict_task_score(reward),
         }
 
         return StepResult(
@@ -1383,6 +1387,7 @@ class AutoMindEnv:
             action_reason=applied_action.reason,
         )
         self.last_info["task_score"] = strict_task_score(self.last_reward)
+        self.last_info["score"] = strict_task_score(self.last_reward)
         self.last_background_sync_at = time.monotonic()
 
         if self.current_task == "driving_decision":
