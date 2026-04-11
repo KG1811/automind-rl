@@ -7,12 +7,14 @@ from __future__ import annotations
 from typing import Optional
 from models import Observation, Action, Metrics
 
-MIN_TASK_SCORE = 1e-2
-MAX_TASK_SCORE = 0.99
+MIN_TASK_SCORE = 0.05
+MAX_TASK_SCORE = 0.95
 
+def safe_score(x: float) -> float:
+    return max(0.05, min(0.95, float(x)))
 
 def strict_task_score(score: float) -> float:
-    return round(max(MIN_TASK_SCORE, min(MAX_TASK_SCORE, score)), 3)
+    return float(round(safe_score(score), 3))
 
 
 # =====================================
@@ -195,10 +197,10 @@ def grade_autonomous_control(
             for alert in ["ENGINE OVERHEATING", "BRAKE FAILURE", "BATTERY ISSUE", "LOW OIL"]
         )
 
-        score += 0.08 * float(reward_breakdown.get("service_component", 1e-2))
-        score += 0.10 * float(reward_breakdown.get("health_component", 1e-2))
-        score += 0.05 * float(reward_breakdown.get("safety_component", 1e-2))
-        score += 0.03 * float(reward_breakdown.get("sequence_component", 1e-2))
+        score += 0.08 * float(reward_breakdown.get("service_component", 0.05))
+        score += 0.10 * float(reward_breakdown.get("health_component", 0.05))
+        score += 0.05 * float(reward_breakdown.get("safety_component", 0.05))
+        score += 0.03 * float(reward_breakdown.get("sequence_component", 0.05))
 
         if outcome == "success_safe_stop":
             score += 0.12

@@ -3,6 +3,7 @@ import hashlib
 from models import Action, Observation, StepResult, RewardBreakdown
 from environment import AutoMindEnv
 import threading
+from tasks import safe_score
 
 app = FastAPI(title="AutoMind OpenEnv Fleet Benchmark", version="1.0.0")
 
@@ -64,6 +65,15 @@ def step(action: Action, car_id: str = "default"):
     if not env.is_initialized():
         env.reset()
     result = env.step(action)
+    
+    # Extra safety enforcement across all output outputs
+    result.reward = safe_score(result.reward)
+    if result.metrics:
+        result.metrics.safety_score = safe_score(result.metrics.safety_score)
+        result.metrics.efficiency_score = safe_score(result.metrics.efficiency_score)
+        result.metrics.diagnosis_score = safe_score(result.metrics.diagnosis_score)
+        result.metrics.sequence_score = safe_score(result.metrics.sequence_score)
+        
     return result.model_dump()
 
 @app.get("/state")
