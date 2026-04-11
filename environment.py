@@ -1193,9 +1193,9 @@ class AutoMindEnv:
             self.last_reward_breakdown = RewardBreakdown(
                 total=strict_task_score(0),
                 safety_component=strict_task_score(0),
-                efficiency_component=strict_task_score(0),
+                efficiency_component=strict_task_score(1e-2),
                 diagnosis_component=strict_task_score(0),
-                service_component=strict_task_score(0),
+                service_component=strict_task_score(1e-2),
                 health_component=strict_task_score(0),
                 sequence_component=strict_task_score(self.episode_state.step_count / max(1, self.max_steps)),
                 penalty_component=-0.99,
@@ -1210,10 +1210,10 @@ class AutoMindEnv:
         )
 
         safety = max(1e-2, min(0.99, 1 - collision_risk))
-        efficiency = max(0, min(1, observation.speed / 90.0))
+        efficiency = max(1e-2, min(0.99, observation.speed / 90.0))
         diagnosis = 0.99 if alerts else 0.65
-        health_component = max(0, min(1, health_snapshot["overall"] / 100.0))
-        sequence = min(1, max(0.2, len(observation.history) / 6.0))
+        health_component = max(1e-2, min(0.99, health_snapshot["overall"] / 100.0))
+        sequence = min(0.99, max(0.2, len(observation.history) / 6.0))
 
         service_component = 0.55
         if severe_alert and action.action_type in {"request_service", "reschedule_service"}:
@@ -1225,7 +1225,7 @@ class AutoMindEnv:
         elif not severe_alert and action.action_type in {"request_service", "reschedule_service"}:
             service_component = 0.30
 
-        penalty = 0
+        penalty = -0.01
         if collision_risk > 0.8 and action.action_type == "accelerate":
             penalty -= 0.40
         elif collision_risk > 0.6 and action.action_type == "continue":
@@ -1258,7 +1258,7 @@ class AutoMindEnv:
 
     def _compute_metrics(self, collision_risk: float, observation: Observation) -> Metrics:
         safety = 1e-2 if collision_risk >= 0.97 else max(1e-2, min(0.99, 1 - collision_risk))
-        efficiency = max(0, min(1, observation.speed / 90.0))
+        efficiency = max(1e-2, min(0.99, observation.speed / 90.0))
 
         diagnosis = 0.5
         if (
@@ -1271,7 +1271,7 @@ class AutoMindEnv:
         ):
             diagnosis = 0.99
 
-        sequence = min(1, self.episode_state.step_count / 10.0)
+        sequence = min(0.99, max(1e-2, self.episode_state.step_count / 10.0))
 
         return Metrics(
             safety_score=self._strict_metric_score(safety),
@@ -1306,12 +1306,12 @@ class AutoMindEnv:
             score = grade_fault_diagnosis(action, self.current_observation)
             self.last_reward_breakdown = RewardBreakdown(
                 total=strict_task_score(score),
-                safety_component=strict_task_score(1),
-                efficiency_component=strict_task_score(0),
+                safety_component=strict_task_score(0.99),
+                efficiency_component=strict_task_score(1e-2),
                 diagnosis_component=strict_task_score(score),
-                service_component=strict_task_score(0),
+                service_component=strict_task_score(1e-2),
                 health_component=strict_task_score(self.compute_health(self.current_observation, 0.02) / 100.0),
-                sequence_component=strict_task_score(1),
+                sequence_component=strict_task_score(0.99),
                 penalty_component=-1e-2,
             )
             self.last_info = self._build_info(
@@ -1327,9 +1327,9 @@ class AutoMindEnv:
                 },
                 metrics=Metrics(
                     safety_score=self._strict_metric_score(0.99),
-                    efficiency_score=self._strict_metric_score(0),
+                    efficiency_score=self._strict_metric_score(1e-2),
                     diagnosis_score=self._strict_metric_score(score),
-                    sequence_score=self._strict_metric_score(1),
+                    sequence_score=self._strict_metric_score(0.99),
                 ),
             )
 
@@ -1346,7 +1346,7 @@ class AutoMindEnv:
             self.override_count += 1
             applied_action = Action(
                 action_type="accelerate",
-                value=min(1, max(0.2, action.value)),
+                value=min(0.99, max(0.2, action.value)),
                 reason="Human override",
             )
 
@@ -1398,9 +1398,9 @@ class AutoMindEnv:
                 safety_component=strict_task_score(self.last_metrics.safety_score),
                 efficiency_component=strict_task_score(self.last_metrics.efficiency_score),
                 diagnosis_component=strict_task_score(decision_score),
-                service_component=strict_task_score(0),
+                service_component=strict_task_score(1e-2),
                 health_component=strict_task_score(self.last_info.get("health_score", 0) / 100.0),
-                sequence_component=strict_task_score(1),
+                sequence_component=strict_task_score(0.99),
                 penalty_component=-1e-2,
             )
             self.last_info["reward_breakdown"] = self.last_reward_breakdown.model_dump()
@@ -1420,7 +1420,7 @@ class AutoMindEnv:
                     safety_score=self._strict_metric_score(self.last_metrics.safety_score),
                     efficiency_score=self._strict_metric_score(self.last_metrics.efficiency_score),
                     diagnosis_score=self._strict_metric_score(decision_score),
-                    sequence_score=self._strict_metric_score(1),
+                    sequence_score=self._strict_metric_score(0.99),
                 ),
             )
 
