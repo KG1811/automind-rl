@@ -288,6 +288,16 @@ def frontend():
 
 <body>
 
+    <!-- 🌐 App URL Display -->
+    <div id="appUrl" style="
+        background: #020617;
+        padding: 10px;
+        font-size: 14px;
+        border-bottom: 1px solid #334155;
+    ">
+        🔗 Loading app URL...
+    </div>
+
     <h1>🚗 AutoMind Control Panel</h1>
 
     <div class="container">
@@ -302,6 +312,10 @@ def frontend():
     <div id="output">System response will appear here...</div>
 
     <script>
+        // 🔗 Show deployed URL automatically
+        document.getElementById("appUrl").innerText =
+            "🔗 App URL: " + window.location.href;
+
         async function sendRequest() {
             const text = document.getElementById("inputText").value;
 
@@ -311,10 +325,8 @@ def frontend():
                     headers: {
                         "Content-Type": "application/json"
                     },
-
-                    // ⚠️ IMPORTANT: Adjust this based on your Action model
                     body: JSON.stringify({
-                        action: text
+                        action: text   // adjust if needed
                     })
                 });
 
