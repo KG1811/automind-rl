@@ -1,8 +1,8 @@
 from fastapi import FastAPI, Body
-import gradio as gr
 import requests
 import hashlib
 import threading
+from fastapi.responses import HTMLResponse
 
 from models import Action, Observation, StepResult, RewardBreakdown
 from environment import AutoMindEnv
@@ -203,23 +203,146 @@ def schema():
         "StepResult":      StepResult.model_json_schema(),
     }
 
-# ── Mount Gradio Frontend ───────────────────────────────────────────────────────
-def call_api(text):
-    try:
-        # Dummy example as provided: user can replace with their real external API
-        res = requests.post("https://khushi1811-automind-rl.hf.space/run/predict", json={"input": text})
-        return res.json()
-    except Exception as e:
-        return f"API Call Failed or Not Implemented Yet: {str(e)}"
+@app.get("/", response_class=HTMLResponse)
+def frontend():
+    return """
+<!DOCTYPE html>
+<html>
+<head>
+    <title>AutoMind Dashboard</title>
 
-# Define the Gradio interface
-demo = gr.Interface(
-    fn=call_api, 
-    inputs="text", 
-    outputs="text",
-    title="AutoMind Frontend",
-    description="Your API backend is active! You can test text inputs here."
-)
+    <style>
+        body {
+            margin: 0;
+            font-family: 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #0f172a, #020617);
+            color: white;
+            text-align: center;
+        }
 
-# Mount the interface to the FastAPI root path so it shows up natively on Hugging Face
-app = gr.mount_gradio_app(app, demo, path="/")
+        h1 {
+            margin-top: 30px;
+            font-size: 2.5rem;
+        }
+
+        .container {
+            margin-top: 40px;
+        }
+
+        input {
+            padding: 12px;
+            width: 300px;
+            border-radius: 10px;
+            border: none;
+            outline: none;
+            font-size: 16px;
+        }
+
+        button {
+            padding: 12px 20px;
+            margin: 10px;
+            border-radius: 10px;
+            border: none;
+            font-size: 16px;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .btn-send {
+            background: #22c55e;
+            color: white;
+        }
+
+        .btn-state {
+            background: #3b82f6;
+            color: white;
+        }
+
+        button:hover {
+            transform: scale(1.05);
+            opacity: 0.9;
+        }
+
+        #output {
+            margin: 40px auto;
+            width: 80%;
+            max-width: 900px;
+            background: #1e293b;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: left;
+            white-space: pre-wrap;
+            font-size: 14px;
+            overflow-x: auto;
+        }
+
+        .card {
+            background: #020617;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+            display: inline-block;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h1>🚗 AutoMind Control Panel</h1>
+
+    <div class="container">
+        <div class="card">
+            <input id="inputText" type="text" placeholder="Enter action (brake / accelerate / stop)" />
+            <br>
+            <button class="btn-send" onclick="sendRequest()">Send Action</button>
+            <button class="btn-state" onclick="getState()">Get State</button>
+        </div>
+    </div>
+
+    <div id="output">System response will appear here...</div>
+
+    <script>
+        async function sendRequest() {
+            const text = document.getElementById("inputText").value;
+
+            try {
+                const response = await fetch("/step", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+
+                    // ⚠️ IMPORTANT: Adjust this based on your Action model
+                    body: JSON.stringify({
+                        action: text
+                    })
+                });
+
+                const data = await response.json();
+                document.getElementById("output").innerText =
+                    JSON.stringify(data, null, 2);
+
+            } catch (error) {
+                document.getElementById("output").innerText =
+                    "Error: " + error;
+            }
+        }
+
+        async function getState() {
+            try {
+                const response = await fetch("/state");
+                const data = await response.json();
+
+                document.getElementById("output").innerText =
+                    JSON.stringify(data, null, 2);
+
+            } catch (error) {
+                document.getElementById("output").innerText =
+                    "Error: " + error;
+            }
+        }
+    </script>
+
+</body>
+</html>
+"""
