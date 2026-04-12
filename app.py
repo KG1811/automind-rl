@@ -207,7 +207,7 @@ def schema():
 def call_api(text):
     try:
         # Dummy example as provided: user can replace with their real external API
-        res = requests.post("https://huggingface.co/spaces/khushi1811/automind_rl/predict", json={"input": text})
+        res = requests.post("https://khushi1811-automind-rl.hf.space/run/predict", json={"input": text})
         return res.json()
     except Exception as e:
         return f"API Call Failed or Not Implemented Yet: {str(e)}"
