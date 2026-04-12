@@ -203,6 +203,7 @@ def schema():
         "StepResult":      StepResult.model_json_schema(),
     }
 
+
 @app.get("/", response_class=HTMLResponse)
 def frontend():
     return """
@@ -218,6 +219,24 @@ def frontend():
             background: linear-gradient(135deg, #0f172a, #020617);
             color: white;
             text-align: center;
+        }
+
+        /* Top URL Bar */
+        #topBar {
+            background: #020617;
+            padding: 12px;
+            border-bottom: 1px solid #334155;
+            font-size: 14px;
+        }
+
+        #topBar a {
+            color: #22c55e;
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        #topBar a:hover {
+            text-decoration: underline;
         }
 
         h1 {
@@ -278,24 +297,36 @@ def frontend():
 
         .card {
             background: #020617;
-            padding: 20px;
+            padding: 25px;
             border-radius: 15px;
             box-shadow: 0 0 20px rgba(0,0,0,0.5);
             display: inline-block;
+        }
+
+        .download {
+            margin-top: 15px;
+            font-size: 16px;
+        }
+
+        .download a {
+            color: #38bdf8;
+            font-weight: bold;
+            text-decoration: none;
+        }
+
+        .download a:hover {
+            text-decoration: underline;
         }
     </style>
 </head>
 
 <body>
 
-    <!-- 🌐 App URL Display -->
-    <div id="appUrl" style="
-        background: #020617;
-        padding: 10px;
-        font-size: 14px;
-        border-bottom: 1px solid #334155;
-    ">
-        🔗 Loading app URL...
+    <!-- 🔗 App Info + Download Link -->
+    <div id="topBar">
+        🔗 <a href="https://drive.google.com/file/d/1tdwMznw1ffQzn4oP3eyfBqTWWov77ek8/view?usp=share_link" target="_blank">
+        Download our app on your Android phone
+        </a>
     </div>
 
     <h1>🚗 AutoMind Control Panel</h1>
@@ -306,16 +337,18 @@ def frontend():
             <br>
             <button class="btn-send" onclick="sendRequest()">Send Action</button>
             <button class="btn-state" onclick="getState()">Get State</button>
+
+            <div class="download">
+                📱 <a href="https://drive.google.com/file/d/1tdwMznw1ffQzn4oP3eyfBqTWWov77ek8/view?usp=share_link" target="_blank">
+                Download our app on your Android phone
+                </a>
+            </div>
         </div>
     </div>
 
     <div id="output">System response will appear here...</div>
 
     <script>
-        // 🔗 Show deployed URL automatically
-        document.getElementById("appUrl").innerText =
-            "🔗 App URL: " + window.location.href;
-
         async function sendRequest() {
             const text = document.getElementById("inputText").value;
 
@@ -326,7 +359,7 @@ def frontend():
                         "Content-Type": "application/json"
                     },
                     body: JSON.stringify({
-                        action: text   // adjust if needed
+                        action: text
                     })
                 });
 
