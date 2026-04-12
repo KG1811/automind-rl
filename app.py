@@ -1,4 +1,6 @@
 from fastapi import FastAPI, Body
+import gradio as gr
+import requests
 import hashlib
 import threading
 
@@ -43,7 +45,7 @@ def get_env(car_id: str) -> AutoMindEnv:
         return envs[car_id]
 
 
-@app.get("/")
+@app.get("/status")
 def root():
     return {
         "status": "AutoMind OpenEnv fleet maintenance benchmark running",
@@ -200,3 +202,24 @@ def schema():
         "RewardBreakdown": RewardBreakdown.model_json_schema(),
         "StepResult":      StepResult.model_json_schema(),
     }
+
+# ── Mount Gradio Frontend ───────────────────────────────────────────────────────
+def call_api(text):
+    try:
+        # Dummy example as provided: user can replace with their real external API
+        res = requests.post("https://huggingface.co/spaces/khushi1811/automind_rl/predict", json={"input": text})
+        return res.json()
+    except Exception as e:
+        return f"API Call Failed or Not Implemented Yet: {str(e)}"
+
+# Define the Gradio interface
+demo = gr.Interface(
+    fn=call_api, 
+    inputs="text", 
+    outputs="text",
+    title="AutoMind Frontend",
+    description="Your API backend is active! You can test text inputs here."
+)
+
+# Mount the interface to the FastAPI root path so it shows up natively on Hugging Face
+app = gr.mount_gradio_app(app, demo, path="/")
